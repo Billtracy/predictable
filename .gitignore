@@ -1,0 +1,15 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Secrets — real API keys live in .env (see .env.example)
+.env
+
+# Data — regenerable via the data/ fetch scripts; 11MB binary that changes
+# on every ingest and would bloat git history
+predictable.db
+world_cup_stats_cache.json
+
+# Scratch / working docs
+implementation_plan.md.resolved

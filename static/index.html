@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predictable - World Cup 2026</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    
+    <div class="background-elements">
+        <div class="glow-orb orb-1"></div>
+        <div class="glow-orb orb-2"></div>
+        <div class="glow-orb orb-3"></div>
+    </div>
+
+    <header class="hero">
+        <div class="hero-content">
+            <h1>Predictable <span class="badge">World Cup 2026</span></h1>
+            <p>Advanced Poisson-based prediction engine using xG models and Monte Carlo simulations.</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="section-header">
+            <h2>Upcoming Matches</h2>
+            <div class="loader" id="loader"></div>
+        </div>
+        
+        <div class="grid" id="predictions-grid">
+            <!-- Prediction cards will be injected here via JS -->
+        </div>
+        
+        <div class="empty-state" id="empty-state" style="display: none;">
+            <p>No upcoming matches with known teams found.</p>
+        </div>
+    </main>
+
+    <footer>
+        <p>Built with ❤️ by Predictable AI</p>
+    </footer>
+
+    <script src="/static/js/script.js"></script>
+</body>
+</html>
