@@ -68,8 +68,8 @@ def get_predictions():
                         'away_expected': round(corner_pred['away_expected'], 1),
                         'total_expected': round(corner_pred['results']['total_expected'], 1),
                         'most_likely_total': corner_pred['results']['most_likely_score'],
-                        'over_8_5_prob': round(corner_pred['results']['over_lines'].get('8.5', 0), 1),
-                        'over_9_5_prob': round(corner_pred['results']['over_lines'].get('9.5', 0), 1)
+                        'over_8_5_prob': round(corner_pred['results']['over_lines'].get(8.5, 0), 1),
+                        'over_9_5_prob': round(corner_pred['results']['over_lines'].get(9.5, 0), 1)
                     }
                 })
         except Exception as e:
