@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beat the Model ⚽ - Gameweek Mode</title>
+<style>
+  :root { --bg:#0f1419; --card:#1a222c; --line:#2b3644; --accent:#3ddc84;
+          --accent2:#f4a340; --bad:#ff5c6c; --txt:#e6edf3; --muted:#8b98a5; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+         background:var(--bg); color:var(--txt); padding:24px; }
+  .wrap { max-width:800px; margin:0 auto; }
+  h1 { font-size:1.5rem; margin:0 0 4px; }
+  .sub { color:var(--muted); font-size:.85rem; margin-bottom:18px; }
+  .scoreboard { display:flex; gap:12px; margin-bottom:18px; }
+  .score { flex:1; background:var(--card); border:1px solid var(--line); border-radius:10px;
+           padding:10px 14px; text-align:center; }
+  .score b { display:block; font-size:1.6rem; }
+  .score.you b { color:var(--accent); } .score.model b { color:var(--accent2); }
+  .score span { color:var(--muted); font-size:.75rem; text-transform:uppercase; letter-spacing:.04em; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px;
+          padding:18px; margin-bottom:16px; }
+  .fixture-card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px; margin-bottom:16px; }
+  .fixture-header { text-align:center; font-size:1.2rem; font-weight:600; margin-bottom: 12px; }
+  .fixture-header .vs { color:var(--muted); font-weight:400; margin:0 10px; font-size:0.9rem; }
+  .date { text-align:center; color:var(--muted); font-size:.8rem; margin-top:-8px; margin-bottom:10px; }
+  
+  .model-box { margin-top:14px; padding-top:14px; border-top:1px dashed var(--line); font-size:.85rem; background: rgba(0,0,0,0.1); padding: 10px; border-radius: 8px;}
+  .model-box .row { display:flex; justify-content:space-between; padding:3px 0; color:var(--muted); }
+  .model-box .row b { color:var(--txt); }
+  
+  .toggle { font-size:.8rem; color:var(--muted); cursor:pointer; user-select:none; }
+  .toggle input { vertical-align:middle; }
+  
+  label.q { display:block; font-size:.75rem; color:var(--muted); margin:10px 0 4px;
+            text-transform:uppercase; letter-spacing:.04em; }
+  .opts { display:flex; gap:6px; flex-wrap:wrap; }
+  .opt { flex:1; min-width:60px; text-align:center; padding:8px; border:1px solid var(--line);
+         border-radius:6px; cursor:pointer; background:#131a22; transition:.12s; font-size:.85rem; }
+  .opt:hover { border-color:var(--accent); }
+  .opt.sel { background:var(--accent); color:#08140c; border-color:var(--accent); font-weight:600; }
+  select { width:100%; padding:8px; border-radius:6px; background:#131a22; color:var(--txt);
+           border:1px solid var(--line); font-size:.85rem; }
+  
+  button.go { width:100%; margin-top:18px; padding:13px; border:none; border-radius:9px;
+              background:var(--accent); color:#08140c; font-size:1rem; font-weight:700; cursor:pointer; }
+  button.go:disabled { opacity:.4; cursor:not-allowed; }
+  
+  .gw-select-container { display:flex; gap:12px; align-items:center; margin-bottom: 20px; }
+  .gw-select-container select { flex:1; font-size:1rem; padding:10px; }
+  
+  table { width:100%; border-collapse:collapse; margin-top:6px; font-size:.9rem; }
+  th,td { padding:8px 6px; text-align:center; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-weight:500; font-size:.75rem; text-transform:uppercase; }
+  td.cat { text-align:left; color:var(--muted); }
+  .tick { color:var(--accent); font-weight:700; } .cross { color:var(--bad); font-weight:700; }
+  
+  .verdict { text-align:center; font-size:1.1rem; font-weight:700; margin:14px 0 4px; }
+  .actual { text-align:center; color:var(--muted); font-size:.9rem; margin-bottom:10px; }
+  .hidden { display:none !important; }
+  .loading { text-align:center; color:var(--muted); padding:30px; }
+  
+  .result-card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px; margin-bottom:16px; border-left: 4px solid var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+    <h1 style="margin:0;">Beat the Model ⚽ - Gameweek Mode</h1>
+    <a href="/game" style="color:var(--muted); text-decoration:none; font-size:0.9rem; font-weight:bold; border:1px solid var(--line); padding:4px 10px; border-radius:6px;">&larr; Single Match</a>
+  </div>
+  <div class="sub">Predict an entire Gameweek. Beat the AI across all fixtures!</div>
+
+  <div class="scoreboard">
+    <div class="score you"><b id="youTotal">0</b><span>You</span></div>
+    <div class="score model"><b id="modelTotal">0</b><span>Model</span></div>
+    <div class="score"><b id="gwsPlayed">0</b><span>GWs</span></div>
+  </div>
+
+  <div class="gw-select-container">
+    <select id="gwSelect">
+      <option value="" disabled selected>Select a Gameweek...</option>
+    </select>
+    <button class="go" id="loadGwBtn" style="width:auto; margin-top:0; padding:10px 20px;">Load GW</button>
+  </div>
+  
+  <label class="toggle" style="display:block;margin-bottom:12px;">
+    <input type="checkbox" id="blind"> Blind mode (hide model predictions until submit)
+  </label>
+
+  <div id="loading" class="loading hidden">Loading Gameweek…</div>
+
+  <div id="game" class="hidden">
+    <div class="card" style="margin-bottom: 20px;">
+      <h3 style="margin-top:0; margin-bottom:10px; font-size:1rem; color:var(--accent);">Select Markets to Predict</h3>
+      <div id="marketSelectors" style="display:flex; gap:15px; flex-wrap:wrap; font-size:0.9rem;">
+        <label><input type="checkbox" class="market-cb" value="wdl" checked> 1X2</label>
+        <label><input type="checkbox" class="market-cb" value="gg" checked> GG</label>
+        <label><input type="checkbox" class="market-cb" value="o15" checked> Over 1.5</label>
+        <label><input type="checkbox" class="market-cb" value="o25" checked> Over 2.5</label>
+        <label><input type="checkbox" class="market-cb" value="corners" checked> Corners</label>
+      </div>
+    </div>
+    <div id="fixturesList"></div>
+    <button class="go" id="submit" disabled>Submit Gameweek</button>
+  </div>
+
+  <div id="resultsView" class="hidden">
+    <div class="card" style="text-align:center; border-color:var(--accent);">
+      <h2 style="margin:0 0 10px 0; color:var(--accent);">Gameweek Summary</h2>
+      <div class="verdict" id="gwVerdict"></div>
+      <p style="color:var(--muted); font-size:0.9rem; margin-bottom:0;">You scored <b id="gwYouScore" style="color:var(--txt)"></b> points. Model scored <b id="gwModelScore" style="color:var(--txt)"></b> points.</p>
+    </div>
+    <div id="resultsList"></div>
+    <button class="go" id="next" style="background:var(--accent2); color:#1a1206;">Pick Another Gameweek &uarr;</button>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let round_id = null;
+let fixturesData = [];
+let userPicks = {}; 
+let youTotal = 0, modelTotal = 0, gwsPlayed = 0;
+
+const CORNER_LINES = [5.5,6.5,7.5,8.5,9.5,10.5,11.5,12.5,13.5,14.5,15.5];
+
+function pct(x){ return x.toFixed(1)+'%'; }
+
+// Load available gameweeks on init
+async function init(){
+  const r = await fetch('/api/game/gameweeks').then(r=>r.json());
+  if(r.success){
+    for(let i=1; i<=r.total_gameweeks; i++){
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = 'Gameweek ' + i;
+      $('gwSelect').appendChild(opt);
+    }
+  }
+}
+
+$('loadGwBtn').addEventListener('click', async () => {
+  const gwId = $('gwSelect').value;
+  if(!gwId) return;
+  
+  $('loading').classList.remove('hidden'); 
+  $('game').classList.add('hidden');
+  $('resultsView').classList.add('hidden');
+  
+  const r = await fetch(`/api/game/gameweek/${gwId}`).then(r=>r.json());
+  $('loading').classList.add('hidden');
+  
+  if(!r.success){ alert(r.error); return; }
+  
+  round_id = r.round_id;
+  fixturesData = r.fixtures;
+  userPicks = {};
+  
+  renderFixtures();
+  $('game').classList.remove('hidden');
+  applyMarketVisibility();
+  checkComplete();
+});
+
+function getActiveMarkets() {
+  return Array.from(document.querySelectorAll('.market-cb:checked')).map(cb => cb.value);
+}
+
+document.querySelectorAll('.market-cb').forEach(cb => {
+    cb.addEventListener('change', () => {
+        applyMarketVisibility();
+        checkComplete();
+    });
+});
+
+function applyMarketVisibility() {
+    const active = getActiveMarkets();
+    ['wdl', 'gg', 'o15', 'o25', 'corners'].forEach(m => {
+        const show = active.includes(m);
+        document.querySelectorAll(`.market-container-${m}`).forEach(el => {
+            el.style.display = show ? 'block' : 'none';
+        });
+    });
+}
+
+function applyBlind(){
+  const isBlind = $('blind').checked;
+  document.querySelectorAll('.model-box').forEach(el => {
+    el.style.visibility = isBlind ? 'hidden' : 'visible';
+  });
+}
+$('blind').addEventListener('change', applyBlind);
+
+function renderFixtures(){
+  const container = $('fixturesList');
+  container.innerHTML = '';
+  
+  fixturesData.forEach((f, idx) => {
+    userPicks[f.match_id] = {};
+    const m = f.model;
+    
+    let cornersOpts = CORNER_LINES.map(l => `<option value="${l}" ${l===9.5?'selected':''}>Over ${l}</option>`).join('');
+    
+    const html = `
+      <div class="fixture-card" data-match="${f.match_id}">
+        <div class="fixture-header"><span>${f.home}</span> <span class="vs">vs</span> <span>${f.away}</span></div>
+        <div class="date">${f.date}</div>
+        
+        <div class="model-box">
+          <div class="row">xG: <b>${f.home} ${m.home_xg.toFixed(2)} — ${m.away_xg.toFixed(2)} ${f.away}</b></div>
+          <div class="row">Score: <b>${m.score}</b></div>
+          <div class="row">1X2: <b>${pct(m.home_win)} / ${pct(m.draw)} / ${pct(m.away_win)} → ${m.picks.wdl.toUpperCase()}</b></div>
+          <div class="row">GG: <b>${pct(m.gg)} → ${m.picks.gg.toUpperCase()}</b></div>
+          <div class="row">O1.5 / O2.5: <b>${pct(m.o15)} / ${pct(m.o25)} → ${m.picks.o15.toUpperCase()} / ${m.picks.o25.toUpperCase()}</b></div>
+          <div class="row">Corners: <b>${m.corner_expected} → Over ${m.picks.corner_line}</b></div>
+        </div>
+        
+        <div style="margin-top:15px;">
+          <div class="market-container-wdl">
+              <label class="q">1X2</label>
+              <div class="opts" data-group="wdl">
+                <div class="opt" data-val="home">Home</div><div class="opt" data-val="draw">Draw</div><div class="opt" data-val="away">Away</div>
+              </div>
+          </div>
+          <div style="display:flex; gap:10px; margin-top:10px;">
+              <div style="flex:1" class="market-container-gg">
+                  <label class="q">GG</label>
+                  <div class="opts" data-group="gg">
+                    <div class="opt" data-val="yes">Yes</div><div class="opt" data-val="no">No</div>
+                  </div>
+              </div>
+              <div style="flex:1" class="market-container-o15">
+                  <label class="q">Over 1.5</label>
+                  <div class="opts" data-group="o15">
+                    <div class="opt" data-val="yes">Yes</div><div class="opt" data-val="no">No</div>
+                  </div>
+              </div>
+              <div style="flex:1" class="market-container-o25">
+                  <label class="q">Over 2.5</label>
+                  <div class="opts" data-group="o25">
+                    <div class="opt" data-val="yes">Yes</div><div class="opt" data-val="no">No</div>
+                  </div>
+              </div>
+          </div>
+          <div class="market-container-corners" style="margin-top:10px;">
+              <label class="q">Corners Line</label>
+              <select class="c-line">${cornersOpts}</select>
+          </div>
+        </div>
+      </div>
+    `;
+    container.insertAdjacentHTML('beforeend', html);
+  });
+  
+  // Set default corner line to 9.5 in userPicks
+  fixturesData.forEach(f => {
+      userPicks[f.match_id].corner_line = 9.5;
+  });
+  
+  applyBlind();
+  
+  // Attach events
+  document.querySelectorAll('.opts').forEach(group => {
+    group.addEventListener('click', e => {
+      const opt = e.target.closest('.opt'); if(!opt) return;
+      const g = group.dataset.group;
+      const matchId = group.closest('.fixture-card').dataset.match;
+      
+      group.querySelectorAll('.opt').forEach(o=>o.classList.remove('sel'));
+      opt.classList.add('sel'); 
+      userPicks[matchId][g] = opt.dataset.val;
+      checkComplete();
+    });
+  });
+  
+  document.querySelectorAll('.c-line').forEach(sel => {
+      sel.addEventListener('change', e => {
+          const matchId = e.target.closest('.fixture-card').dataset.match;
+          userPicks[matchId].corner_line = parseFloat(e.target.value);
+      });
+  });
+}
+
+function checkComplete(){
+  const active = getActiveMarkets();
+  if (active.length === 0) {
+    $('submit').disabled = true;
+    return;
+  }
+  let allDone = true;
+  for(let id in userPicks){
+    const p = userPicks[id];
+    if(active.includes('wdl') && !p.wdl) { allDone = false; break; }
+    if(active.includes('gg') && !p.gg) { allDone = false; break; }
+    if(active.includes('o15') && !p.o15) { allDone = false; break; }
+    if(active.includes('o25') && !p.o25) { allDone = false; break; }
+  }
+  $('submit').disabled = !allDone;
+}
+
+$('submit').addEventListener('click', async () => {
+  $('submit').disabled = true;
+  
+  const active = getActiveMarkets();
+  const r = await fetch('/api/game/grade_gameweek', {
+    method:'POST', 
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({round_id: round_id, picks: userPicks, markets: active})
+  }).then(r=>r.json());
+  
+  if(!r.success){ alert(r.error||'Error'); return; }
+  
+  // Reveal all models
+  document.querySelectorAll('.model-box').forEach(el => el.style.visibility='visible');
+  
+  renderResults(r);
+});
+
+function renderResults(r){
+  const container = $('resultsList');
+  container.innerHTML = '';
+  
+  // Match results back to fixture data for names
+  r.results.forEach(res => {
+      const fix = fixturesData.find(f => f.match_id === res.match_id);
+      
+      const rows = res.categories.map(c=>`<tr>
+        <td class="cat">${c.label}</td>
+        <td>${fmt(c.you)}</td><td>${fmt(c.model)}</td><td>${fmt(c.actual)}</td>
+        <td class="${c.you_correct?'tick':'cross'}">${c.you_correct?'✓':'✗'}</td>
+        <td class="${c.model_correct?'tick':'cross'}">${c.model_correct?'✓':'✗'}</td>
+      </tr>`).join('');
+      
+      const html = `
+        <div class="result-card">
+            <div class="fixture-header" style="font-size:1.1rem;">${fix.home} <span class="vs">vs</span> ${fix.away}</div>
+            <div class="actual" style="color:var(--accent); font-weight:bold;">Actual: ${res.actual_summary}</div>
+            <table>
+                <thead><tr><th class="cat">Market</th><th>You</th><th>Model</th><th>Actual</th><th>You</th><th>Model</th></tr></thead>
+                <tbody>${rows}</tbody>
+            </table>
+        </div>
+      `;
+      container.insertAdjacentHTML('beforeend', html);
+  });
+  
+  const v = r.you_score, mo = r.model_score;
+  $('gwVerdict').textContent = v>mo ? `You dominated the GW! 🎉` : v<mo ? `The Model crushed you 🤖` : `It's a draw! 🤝`;
+  $('gwVerdict').style.color = v>mo ? 'var(--accent)' : v<mo ? 'var(--bad)' : 'var(--muted)';
+  $('gwYouScore').textContent = v;
+  $('gwModelScore').textContent = mo;
+  
+  youTotal += v; modelTotal += mo; gwsPlayed++;
+  $('youTotal').textContent = youTotal; 
+  $('modelTotal').textContent = modelTotal; 
+  $('gwsPlayed').textContent = gwsPlayed;
+  
+  $('game').classList.add('hidden');
+  $('resultsView').classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+
+function fmt(v){ return String(v).replace(/^(home|away|draw|yes|no)$/i, s=>s.toUpperCase()); }
+
+$('next').addEventListener('click', () => {
+    $('resultsView').classList.add('hidden');
+    window.scrollTo(0,0);
+});
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beat the Model ⚽</title>
+<style>
+  :root { --bg:#0f1419; --card:#1a222c; --line:#2b3644; --accent:#3ddc84;
+          --accent2:#f4a340; --bad:#ff5c6c; --txt:#e6edf3; --muted:#8b98a5; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+         background:var(--bg); color:var(--txt); padding:24px; }
+  .wrap { max-width:680px; margin:0 auto; }
+  h1 { font-size:1.5rem; margin:0 0 4px; }
+  .sub { color:var(--muted); font-size:.85rem; margin-bottom:18px; }
+  .scoreboard { display:flex; gap:12px; margin-bottom:18px; }
+  .score { flex:1; background:var(--card); border:1px solid var(--line); border-radius:10px;
+           padding:10px 14px; text-align:center; }
+  .score b { display:block; font-size:1.6rem; }
+  .score.you b { color:var(--accent); } .score.model b { color:var(--accent2); }
+  .score span { color:var(--muted); font-size:.75rem; text-transform:uppercase; letter-spacing:.04em; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px;
+          padding:18px; margin-bottom:16px; }
+  .fixture { text-align:center; font-size:1.35rem; font-weight:600; }
+  .fixture .vs { color:var(--muted); font-weight:400; margin:0 10px; font-size:1rem; }
+  .date { text-align:center; color:var(--muted); font-size:.8rem; margin-top:4px; }
+  .model-box { margin-top:14px; padding-top:14px; border-top:1px dashed var(--line); font-size:.85rem; }
+  .model-box .row { display:flex; justify-content:space-between; padding:3px 0; color:var(--muted); }
+  .model-box .row b { color:var(--txt); }
+  .toggle { font-size:.8rem; color:var(--muted); cursor:pointer; user-select:none; }
+  .toggle input { vertical-align:middle; }
+  label.q { display:block; font-size:.8rem; color:var(--muted); margin:14px 0 6px;
+            text-transform:uppercase; letter-spacing:.04em; }
+  .opts { display:flex; gap:8px; flex-wrap:wrap; }
+  .opt { flex:1; min-width:70px; text-align:center; padding:10px; border:1px solid var(--line);
+         border-radius:8px; cursor:pointer; background:#131a22; transition:.12s; font-size:.95rem; }
+  .opt:hover { border-color:var(--accent); }
+  .opt.sel { background:var(--accent); color:#08140c; border-color:var(--accent); font-weight:600; }
+  select { width:100%; padding:10px; border-radius:8px; background:#131a22; color:var(--txt);
+           border:1px solid var(--line); font-size:.95rem; }
+  button.go { width:100%; margin-top:18px; padding:13px; border:none; border-radius:9px;
+              background:var(--accent); color:#08140c; font-size:1rem; font-weight:700; cursor:pointer; }
+  button.go:disabled { opacity:.4; cursor:not-allowed; }
+  button.next { background:var(--accent2); color:#1a1206; }
+  table { width:100%; border-collapse:collapse; margin-top:6px; font-size:.9rem; }
+  th,td { padding:8px 6px; text-align:center; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-weight:500; font-size:.75rem; text-transform:uppercase; }
+  td.cat { text-align:left; color:var(--muted); }
+  .tick { color:var(--accent); font-weight:700; } .cross { color:var(--bad); font-weight:700; }
+  .verdict { text-align:center; font-size:1.1rem; font-weight:700; margin:14px 0 4px; }
+  .actual { text-align:center; color:var(--muted); font-size:.9rem; margin-bottom:10px; }
+  .hidden { display:none; }
+  .loading { text-align:center; color:var(--muted); padding:30px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+    <h1 style="margin:0;">Beat the Model ⚽</h1>
+    <a href="/game/gameweek" style="color:var(--accent); text-decoration:none; font-size:0.9rem; font-weight:bold; border:1px solid var(--accent); padding:4px 10px; border-radius:6px;">Gameweek Mode &rarr;</a>
+  </div>
+  <div class="sub">Predict a random 2024/25 EPL fixture's markets. Model picks are leak-free (point-in-time).</div>
+
+  <div class="scoreboard">
+    <div class="score you"><b id="youTotal">0</b><span>You</span></div>
+    <div class="score model"><b id="modelTotal">0</b><span>Model</span></div>
+    <div class="score"><b id="rounds">0</b><span>Rounds</span></div>
+  </div>
+
+  <div id="loading" class="loading">Loading fixture…</div>
+
+  <div id="game" class="hidden">
+    <div class="card">
+      <div class="fixture"><span id="home"></span><span class="vs">vs</span><span id="away"></span></div>
+      <div class="date" id="date"></div>
+      <label class="toggle" style="display:block;margin-top:12px;">
+        <input type="checkbox" id="blind"> Blind mode (hide model until I submit)
+      </label>
+      <div class="model-box" id="modelBox">
+        <div class="row">Expected goals (xG): <b id="mXg"></b></div>
+        <div class="row">Most likely score: <b id="mScore"></b></div>
+        <div class="row">1X2 (H / D / A): <b id="mWdl"></b></div>
+        <div class="row">Both teams to score: <b id="mGg"></b></div>
+        <div class="row">Over 1.5 / Over 2.5 goals: <b id="mGoals"></b></div>
+        <div class="row">Expected corners → model line: <b id="mCorner"></b></div>
+      </div>
+    </div>
+
+    <div class="card" id="form">
+      <label class="q">1X2 — who wins?</label>
+      <div class="opts" data-group="wdl">
+        <div class="opt" data-val="home">Home</div>
+        <div class="opt" data-val="draw">Draw</div>
+        <div class="opt" data-val="away">Away</div>
+      </div>
+      <label class="q">Both teams to score?</label>
+      <div class="opts" data-group="gg">
+        <div class="opt" data-val="yes">Yes</div><div class="opt" data-val="no">No</div>
+      </div>
+      <label class="q">Over 1.5 goals?</label>
+      <div class="opts" data-group="o15">
+        <div class="opt" data-val="yes">Yes</div><div class="opt" data-val="no">No</div>
+      </div>
+      <label class="q">Over 2.5 goals?</label>
+      <div class="opts" data-group="o25">
+        <div class="opt" data-val="yes">Yes</div><div class="opt" data-val="no">No</div>
+      </div>
+      <label class="q">Corners — highest line you think it goes OVER</label>
+      <select id="cornerLine"></select>
+      <button class="go" id="submit" disabled>Reveal result</button>
+    </div>
+
+    <div class="card hidden" id="results">
+      <div class="verdict" id="verdict"></div>
+      <div class="actual" id="actualLine"></div>
+      <table>
+        <thead><tr><th class="cat">Market</th><th>You</th><th>Model</th><th>Actual</th><th>You</th><th>Model</th></tr></thead>
+        <tbody id="resBody"></tbody>
+      </table>
+      <button class="go next" id="next">Next fixture →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let round = null, picks = {};
+let youTotal = 0, modelTotal = 0, rounds = 0;
+
+const CORNER_LINES = [5.5,6.5,7.5,8.5,9.5,10.5,11.5,12.5,13.5,14.5,15.5];
+CORNER_LINES.forEach(l => { const o=document.createElement('option'); o.value=l; o.textContent='Over '+l; $('cornerLine').appendChild(o); });
+$('cornerLine').value = 9.5;
+
+function pct(x){ return x.toFixed(1)+'%'; }
+
+async function loadFixture(){
+  $('loading').classList.remove('hidden'); $('game').classList.add('hidden');
+  picks = {}; document.querySelectorAll('.opt.sel').forEach(o=>o.classList.remove('sel'));
+  $('results').classList.add('hidden'); $('form').classList.remove('hidden'); $('submit').disabled=true;
+  const r = await fetch('/api/game/fixture').then(r=>r.json());
+  if(!r.success){ $('loading').textContent = r.error || 'Error — retrying…'; setTimeout(loadFixture,800); return; }
+  round = r;
+  $('home').textContent = r.fixture.home; $('away').textContent = r.fixture.away; $('date').textContent = r.fixture.date;
+  const m = r.model;
+  $('mXg').textContent = `${r.fixture.home} ${m.home_xg.toFixed(2)}  —  ${m.away_xg.toFixed(2)} ${r.fixture.away}`;
+  $('mScore').textContent = `${r.fixture.home} ${m.score} ${r.fixture.away}`;
+  $('mWdl').textContent = `${pct(m.home_win)} / ${pct(m.draw)} / ${pct(m.away_win)}  →  ${m.picks.wdl.toUpperCase()}`;
+  $('mGg').textContent = `${pct(m.gg)} → ${m.picks.gg.toUpperCase()}`;
+  $('mGoals').textContent = `${pct(m.o15)} / ${pct(m.o25)} → ${m.picks.o15.toUpperCase()} / ${m.picks.o25.toUpperCase()}`;
+  $('mCorner').textContent = `${m.corner_expected}  →  Over ${m.picks.corner_line}`;
+  applyBlind();
+  $('loading').classList.add('hidden'); $('game').classList.remove('hidden');
+}
+
+function applyBlind(){ $('modelBox').style.visibility = $('blind').checked ? 'hidden' : 'visible'; }
+$('blind').addEventListener('change', applyBlind);
+
+document.querySelectorAll('.opts').forEach(group=>{
+  group.addEventListener('click', e=>{
+    const opt = e.target.closest('.opt'); if(!opt) return;
+    const g = group.dataset.group;
+    group.querySelectorAll('.opt').forEach(o=>o.classList.remove('sel'));
+    opt.classList.add('sel'); picks[g] = opt.dataset.val;
+    $('submit').disabled = !(picks.wdl && picks.gg && picks.o15 && picks.o25);
+  });
+});
+
+$('submit').addEventListener('click', async ()=>{
+  $('submit').disabled = true;
+  picks.corner_line = parseFloat($('cornerLine').value);
+  const r = await fetch('/api/game/grade', {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({round_id: round.round_id, picks})}).then(r=>r.json());
+  if(!r.success){ alert(r.error||'Error'); loadFixture(); return; }
+  $('modelBox').style.visibility='visible';  // reveal model even in blind mode
+  const a = r.actual;
+  $('actualLine').textContent = `Final: ${round.fixture.home} ${a.home_score}–${a.away_score} ${round.fixture.away} · ${a.corners} corners`;
+  const rows = r.categories.map(c=>`<tr>
+      <td class="cat">${c.label}</td>
+      <td>${fmt(c.you)}</td><td>${fmt(c.model)}</td><td>${fmt(c.actual)}</td>
+      <td class="${c.you_correct?'tick':'cross'}">${c.you_correct?'✓':'✗'}</td>
+      <td class="${c.model_correct?'tick':'cross'}">${c.model_correct?'✓':'✗'}</td>
+    </tr>`).join('');
+  $('resBody').innerHTML = rows;
+  const v = r.you_score, mo = r.model_score;
+  $('verdict').textContent = v>mo ? `You win ${v}–${mo} 🎉` : v<mo ? `Model wins ${mo}–${v} 🤖` : `Tie ${v}–${mo} 🤝`;
+  $('verdict').style.color = v>mo ? 'var(--accent)' : v<mo ? 'var(--bad)' : 'var(--muted)';
+  youTotal+=v; modelTotal+=mo; rounds++;
+  $('youTotal').textContent=youTotal; $('modelTotal').textContent=modelTotal; $('rounds').textContent=rounds;
+  $('form').classList.add('hidden'); $('results').classList.remove('hidden');
+});
+function fmt(v){ return String(v).replace(/^(home|away|draw|yes|no)$/i, s=>s.toUpperCase()); }
+
+$('next').addEventListener('click', loadFixture);
+loadFixture();
+</script>
+</body>
+</html>
