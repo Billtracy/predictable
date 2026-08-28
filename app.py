@@ -12,7 +12,143 @@ app = Flask(__name__, static_folder='static')
 
 @app.route('/')
 def index():
-    return send_from_directory('static', 'index.html')
+    return send_from_directory('static', 'epl.html')
+
+@app.route('/epl')
+def epl_page():
+    return send_from_directory('static', 'epl.html')
+
+# ---------------------------------------------------------------------------
+# EPL 2026/27 prediction endpoints
+# ---------------------------------------------------------------------------
+EPL_COMPETITION = 'epl_2026'
+EPL_MATCHES_PER_GW = 10
+
+
+@app.route('/api/epl/gameweeks')
+def epl_gameweeks():
+    """List gameweeks and detect the current one (first GW with upcoming matches)."""
+    from datetime import datetime
+
+    with get_db() as db:
+        cur = db.cursor()
+        cur.execute('''
+            SELECT m.id, m.date, m.status
+            FROM matches m
+            WHERE m.competition_id = ?
+            ORDER BY m.date
+        ''', (EPL_COMPETITION,))
+        all_matches = cur.fetchall()
+
+    if not all_matches:
+        return jsonify({'success': False, 'error': 'No EPL 2026/27 data. Run fetch first.'})
+
+    total_gws = (len(all_matches) + EPL_MATCHES_PER_GW - 1) // EPL_MATCHES_PER_GW
+
+    # Detect current gameweek: first GW that has at least one NS match
+    now = datetime.utcnow().isoformat()
+    current_gw = 1
+    for gw in range(1, total_gws + 1):
+        offset = (gw - 1) * EPL_MATCHES_PER_GW
+        chunk = all_matches[offset:offset + EPL_MATCHES_PER_GW]
+        has_upcoming = any(m['status'] == 'NS' for m in chunk)
+        if has_upcoming:
+            current_gw = gw
+            break
+    else:
+        current_gw = total_gws  # all played
+
+    return jsonify({
+        'success': True,
+        'total_gameweeks': total_gws,
+        'current_gameweek': current_gw
+    })
+
+
+@app.route('/api/epl/gameweek/<int:gw>')
+def epl_gameweek_predictions(gw):
+    """Return predictions for every fixture in a gameweek."""
+    if gw < 1:
+        return jsonify({'success': False, 'error': 'Invalid gameweek'})
+
+    offset = (gw - 1) * EPL_MATCHES_PER_GW
+
+    with get_db() as db:
+        cur = db.cursor()
+        cur.execute('''
+            SELECT m.id, m.date, m.status,
+                   ht.name AS home, at.name AS away,
+                   m.home_score, m.away_score
+            FROM matches m
+            JOIN teams ht ON m.home_team_id = ht.id
+            JOIN teams at ON m.away_team_id = at.id
+            WHERE m.competition_id = ?
+            ORDER BY m.date
+            LIMIT ? OFFSET ?
+        ''', (EPL_COMPETITION, EPL_MATCHES_PER_GW, offset))
+        matches = cur.fetchall()
+
+    if not matches:
+        return jsonify({'success': False, 'error': 'No fixtures for this gameweek.'})
+
+    fixtures = []
+    for match in matches:
+        home_name = match['home']
+        away_name = match['away']
+
+        try:
+            gp = predict_goals(home_name, away_name, EPL_COMPETITION, verbose=False)
+            cp = predict_corners(home_name, away_name, EPL_COMPETITION, verbose=False)
+        except Exception as e:
+            print(f"EPL predict error {home_name} v {away_name}: {e}")
+            continue
+        if not gp or not cp:
+            continue
+
+        res = gp['results']
+        h, d, a = res['home_win_prob'], res['draw_prob'], res['away_win_prob']
+        s = (h + d + a) or 1.0
+        h, d, a = h / s * 100, d / s * 100, a / s * 100
+
+        top_score = list(res['score_probs'].keys())[0]
+        score_str = f"{top_score[0]}–{top_score[1]}"
+
+        fixture = {
+            'match_id': match['id'],
+            'date': match['date'],
+            'status': match['status'],
+            'home_team': home_name,
+            'away_team': away_name,
+            'goals': {
+                'home_xg': round(gp['home_xg'], 2),
+                'away_xg': round(gp['away_xg'], 2),
+                'win_prob': round(h, 1),
+                'draw_prob': round(d, 1),
+                'loss_prob': round(a, 1),
+                'most_likely_score': score_str,
+                'btts_prob': round(res.get('btts_prob', 0), 1),
+                'over_2_5_prob': round(res.get('over_lines', {}).get(2.5, 0), 1),
+            },
+            'corners': {
+                'home_expected': round(cp['home_expected'], 1),
+                'away_expected': round(cp['away_expected'], 1),
+                'total_expected': round(cp['results']['total_expected'], 1),
+                'over_8_5_prob': round(cp['results']['over_lines'].get(8.5, 0), 1),
+                'over_9_5_prob': round(cp['results']['over_lines'].get(9.5, 0), 1),
+            },
+        }
+
+        # Include actual result if match is finished
+        if match['status'] in ('FT', 'AET', 'PEN'):
+            fixture['actual'] = {
+                'home_score': match['home_score'],
+                'away_score': match['away_score'],
+            }
+
+        fixtures.append(fixture)
+
+    return jsonify({'success': True, 'gameweek': gw, 'fixtures': fixtures})
+
 
 @app.route('/api/predictions')
 def get_predictions():

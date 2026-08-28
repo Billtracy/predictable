@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predictable — EPL 2026/27 Predictions</title>
+    <meta name="description" content="AI-powered Premier League 2026/27 match predictions using Poisson Monte Carlo simulation and expected goals models.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #06060e;
+            --surface: rgba(255,255,255,0.035);
+            --surface-hover: rgba(255,255,255,0.06);
+            --border: rgba(255,255,255,0.08);
+            --border-hover: rgba(255,255,255,0.18);
+            --text: #f0f0f5;
+            --text-muted: #8a8aa0;
+            --text-dim: #5a5a72;
+            --accent: #8b5cf6;
+            --accent-glow: rgba(139,92,246,0.25);
+            --epl-purple: #3d195b;
+            --epl-green: #00ff87;
+            --epl-pink: #e90052;
+            --win: #10b981;
+            --draw: #f59e0b;
+            --loss: #ef4444;
+            --radius: 14px;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg); color: var(--text);
+            min-height: 100vh; overflow-x: hidden;
+        }
+        h1,h2,h3,.score-val { font-family: 'Outfit', sans-serif; }
+
+        /* === Ambient background === */
+        .bg-effects { position:fixed; inset:0; z-index:-1; overflow:hidden; pointer-events:none; }
+        .orb { position:absolute; border-radius:50%; filter:blur(120px); opacity:.35; animation:drift 25s infinite alternate ease-in-out; }
+        .orb-1 { top:-15%; left:-10%; width:55vw; height:55vw; background:radial-gradient(circle,#3d195b 0%,transparent 70%); }
+        .orb-2 { bottom:-10%; right:-15%; width:45vw; height:45vw; background:radial-gradient(circle,#00ff87 0%,transparent 70%); opacity:.15; animation-delay:-8s; }
+        .orb-3 { top:35%; left:55%; width:30vw; height:30vw; background:radial-gradient(circle,#e90052 0%,transparent 70%); opacity:.12; animation-delay:-14s; }
+        @keyframes drift { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(4%,6%) scale(1.08)} }
+
+        /* === Nav === */
+        nav {
+            display:flex; align-items:center; justify-content:space-between;
+            padding:1rem 2rem; border-bottom:1px solid var(--border);
+            background:rgba(6,6,14,0.7); backdrop-filter:blur(16px);
+            position:sticky; top:0; z-index:100;
+        }
+        .nav-brand { font-family:'Outfit'; font-weight:800; font-size:1.25rem;
+            background:linear-gradient(135deg,#fff,#c4b5fd); -webkit-background-clip:text; -webkit-text-fill-color:transparent; text-decoration:none; }
+        .nav-links { display:flex; gap:1.5rem; }
+        .nav-links a { color:var(--text-muted); text-decoration:none; font-size:.9rem; font-weight:500; transition:color .2s; }
+        .nav-links a:hover, .nav-links a.active { color:var(--epl-green); }
+
+        /* === Hero === */
+        .hero {
+            text-align:center; padding:3rem 2rem 2rem;
+            border-bottom:1px solid var(--border);
+            background:rgba(0,0,0,.2); backdrop-filter:blur(10px);
+        }
+        .hero h1 {
+            font-size:2.8rem; font-weight:800; margin-bottom:.6rem;
+            background:linear-gradient(to right,#fff 30%,#00ff87);
+            -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+        }
+        .hero .badge {
+            display:inline-block; font-family:'Inter'; font-size:.8rem; font-weight:600;
+            background:linear-gradient(135deg,var(--epl-purple),var(--epl-pink));
+            color:#fff; padding:.3rem .9rem; border-radius:20px; letter-spacing:.5px;
+            margin-left:.5rem; vertical-align:middle; -webkit-text-fill-color:white;
+        }
+        .hero p { color:var(--text-muted); font-size:1rem; max-width:550px; margin:.5rem auto 0; }
+        .hero .model-note { font-size:.8rem; color:var(--text-dim); margin-top:.6rem; }
+
+        /* === Gameweek Selector === */
+        .gw-bar {
+            display:flex; align-items:center; justify-content:center; gap:.8rem;
+            padding:1.2rem 2rem; background:rgba(0,0,0,.15);
+            border-bottom:1px solid var(--border);
+            flex-wrap:wrap;
+        }
+        .gw-btn {
+            background:var(--surface); border:1px solid var(--border); color:var(--text-muted);
+            padding:.5rem 1rem; border-radius:8px; cursor:pointer; font-size:.85rem;
+            font-weight:500; transition:all .2s; font-family:inherit; min-width:40px;
+        }
+        .gw-btn:hover { border-color:var(--border-hover); color:var(--text); background:var(--surface-hover); }
+        .gw-btn.active { background:var(--epl-purple); border-color:var(--epl-pink); color:#fff; font-weight:700; }
+        .gw-btn.nav-arrow { font-weight:700; font-size:1rem; padding:.5rem .8rem; }
+        .gw-label { color:var(--text-muted); font-size:.8rem; text-transform:uppercase; letter-spacing:1px; font-weight:600; }
+
+        /* === Container === */
+        .container { max-width:1100px; margin:0 auto; padding:2rem; }
+        .section-title { font-size:1.4rem; font-weight:700; margin-bottom:1.5rem; display:flex; align-items:center; gap:.6rem; }
+
+        /* === Match Cards Grid === */
+        .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:1.5rem; }
+
+        .card {
+            background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+            padding:1.4rem; backdrop-filter:blur(12px);
+            transition:transform .3s ease, border-color .3s ease, box-shadow .3s ease;
+            position:relative; overflow:hidden;
+        }
+        .card::before {
+            content:''; position:absolute; top:0; left:0; right:0; height:3px;
+            background:linear-gradient(to right,var(--epl-purple),var(--epl-green));
+            opacity:0; transition:opacity .3s;
+        }
+        .card:hover { transform:translateY(-4px); border-color:var(--border-hover); box-shadow:0 12px 32px rgba(0,0,0,.4); }
+        .card:hover::before { opacity:1; }
+
+        /* Match header */
+        .match-date { font-size:.78rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; text-align:center; margin-bottom:1rem; }
+        .teams { display:flex; justify-content:space-between; align-items:center; }
+        .team { flex:1; text-align:center; }
+        .team-name { font-weight:600; font-size:1.05rem; line-height:1.3; }
+        .team-xg { font-size:.8rem; color:var(--text-muted); margin-top:.3rem;
+            background:rgba(255,255,255,.04); display:inline-block; padding:.15rem .5rem; border-radius:10px; }
+        .vs { font-family:'Outfit'; font-weight:800; font-size:1rem; color:var(--text-dim); padding:0 .8rem; }
+
+        /* Probability bar */
+        .probs { margin-top:1.2rem; }
+        .probs-labels { display:flex; justify-content:space-between; font-size:.75rem; color:var(--text-muted); margin-bottom:.4rem; }
+        .probs-bar { display:flex; height:6px; border-radius:3px; overflow:hidden; gap:2px; }
+        .prob-seg { height:100%; border-radius:3px; transition:width .8s ease-out; }
+        .seg-win { background:var(--win); }
+        .seg-draw { background:var(--draw); }
+        .seg-loss { background:var(--loss); }
+        .prob-verdict { text-align:center; margin-top:.5rem; font-size:.8rem; font-weight:600; }
+        .prob-verdict.home { color:var(--win); }
+        .prob-verdict.draw { color:var(--draw); }
+        .prob-verdict.away { color:var(--loss); }
+
+        /* Stats row */
+        .stats { display:grid; grid-template-columns:1fr 1fr; gap:.8rem; margin-top:1rem;
+            background:rgba(0,0,0,.2); border-radius:10px; padding:.8rem; }
+        .stat { display:flex; flex-direction:column; gap:.15rem; }
+        .stat-label { font-size:.7rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:.5px; }
+        .stat-value { font-family:'Outfit'; font-size:1.2rem; font-weight:700; }
+        .stat-sub { font-size:.7rem; color:var(--text-muted); }
+
+        /* === States === */
+        .loading { text-align:center; padding:4rem 2rem; color:var(--text-muted); }
+        .spinner { width:28px; height:28px; border:3px solid var(--border); border-top-color:var(--accent);
+            border-radius:50%; animation:spin .8s linear infinite; margin:0 auto 1rem; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        .empty { text-align:center; padding:4rem 2rem; color:var(--text-muted); }
+        .empty-icon { font-size:3rem; margin-bottom:1rem; }
+
+        /* === Footer === */
+        footer { text-align:center; padding:3rem 2rem; color:var(--text-dim); font-size:.8rem; border-top:1px solid var(--border); margin-top:3rem; }
+        footer a { color:var(--text-muted); text-decoration:none; }
+
+        /* === Responsive === */
+        @media(max-width:768px) {
+            .hero h1 { font-size:2rem; }
+            .grid { grid-template-columns:1fr; }
+            nav { padding:.8rem 1rem; }
+            .container { padding:1.2rem; }
+            .gw-bar { gap:.4rem; padding:.8rem 1rem; }
+            .gw-btn { padding:.4rem .7rem; font-size:.78rem; min-width:34px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="bg-effects">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+</div>
+
+<nav>
+    <a href="/" class="nav-brand">Predictable</a>
+    <div class="nav-links">
+        <a href="/epl" class="active">EPL 26/27</a>
+        <a href="/game">Beat the Model</a>
+        <a href="/game/gameweek">Gameweek Mode</a>
+    </div>
+</nav>
+
+<header class="hero">
+    <h1>Premier League <span class="badge">2026/27</span></h1>
+    <p>Match predictions powered by Poisson Monte Carlo simulation, xG models, and cross-season team ratings.</p>
+    <div class="model-note">10,000 simulations per match · Updated after each gameweek</div>
+</header>
+
+<div class="gw-bar" id="gwBar">
+    <span class="gw-label">Gameweek</span>
+    <button class="gw-btn nav-arrow" id="gwPrev" onclick="changeGW(-1)">‹</button>
+    <div id="gwButtons"></div>
+    <button class="gw-btn nav-arrow" id="gwNext" onclick="changeGW(1)">›</button>
+</div>
+
+<main class="container">
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+        Loading predictions…
+    </div>
+    <div id="content" style="display:none">
+        <div class="section-title" id="sectionTitle">⚽ Gameweek 1 Predictions</div>
+        <div class="grid" id="grid"></div>
+    </div>
+    <div id="empty" class="empty" style="display:none">
+        <div class="empty-icon">📋</div>
+        <p>No upcoming fixtures for this gameweek.</p>
+    </div>
+</main>
+
+<footer>
+    <p>Built with ❤️ by <a href="#">Predictable AI</a> · Poisson engine with leak-free cross-season priors</p>
+</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+let currentGW = 1;
+let totalGWs = 1;
+let gwData = {}; // cache
+
+async function init() {
+    try {
+        const r = await fetch('/api/epl/gameweeks');
+        const d = await r.json();
+        if (!d.success) throw new Error(d.error);
+        totalGWs = d.total_gameweeks;
+        currentGW = d.current_gameweek || 1;
+        renderGWButtons();
+        loadGameweek(currentGW);
+    } catch(e) {
+        $('loading').innerHTML = '<p>Error loading gameweeks. Ensure the backend is running.</p>';
+        console.error(e);
+    }
+}
+
+function renderGWButtons() {
+    const container = $('gwButtons');
+    container.innerHTML = '';
+    // Show a window of GWs around the current one
+    const windowSize = window.innerWidth < 600 ? 5 : 9;
+    const half = Math.floor(windowSize / 2);
+    let start = Math.max(1, currentGW - half);
+    let end = Math.min(totalGWs, start + windowSize - 1);
+    start = Math.max(1, end - windowSize + 1);
+
+    for (let i = start; i <= end; i++) {
+        const btn = document.createElement('button');
+        btn.className = 'gw-btn' + (i === currentGW ? ' active' : '');
+        btn.textContent = i;
+        btn.onclick = () => loadGameweek(i);
+        container.appendChild(btn);
+    }
+}
+
+function changeGW(delta) {
+    const next = currentGW + delta;
+    if (next >= 1 && next <= totalGWs) loadGameweek(next);
+}
+
+async function loadGameweek(gw) {
+    currentGW = gw;
+    renderGWButtons();
+    $('sectionTitle').textContent = `⚽ Gameweek ${gw} Predictions`;
+    $('content').style.display = 'none';
+    $('empty').style.display = 'none';
+    $('loading').style.display = 'block';
+
+    try {
+        let data = gwData[gw];
+        if (!data) {
+            const r = await fetch(`/api/epl/gameweek/${gw}`);
+            data = await r.json();
+            if (data.success) gwData[gw] = data;
+        }
+
+        $('loading').style.display = 'none';
+
+        if (!data.success || !data.fixtures || data.fixtures.length === 0) {
+            $('empty').style.display = 'block';
+            return;
+        }
+
+        const grid = $('grid');
+        grid.innerHTML = '';
+        data.fixtures.forEach(f => grid.appendChild(createCard(f)));
+        $('content').style.display = 'block';
+
+        // Animate probability bars
+        requestAnimationFrame(() => {
+            document.querySelectorAll('.prob-seg').forEach(el => {
+                el.style.width = el.dataset.w;
+            });
+        });
+    } catch(e) {
+        $('loading').innerHTML = '<p>Error loading predictions.</p>';
+        console.error(e);
+    }
+}
+
+function fmtDate(iso) {
+    const d = new Date(iso);
+    return d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+}
+
+function createCard(f) {
+    const g = f.goals;
+    const c = f.corners;
+    const maxProb = Math.max(g.win_prob, g.draw_prob, g.loss_prob);
+    let verdictText, verdictClass;
+    if (g.win_prob === maxProb) { verdictText = `${f.home_team} favoured`; verdictClass = 'home'; }
+    else if (g.loss_prob === maxProb) { verdictText = `${f.away_team} favoured`; verdictClass = 'away'; }
+    else { verdictText = 'Tight match — draw likely'; verdictClass = 'draw'; }
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+        <div class="match-date">${fmtDate(f.date)}</div>
+        <div class="teams">
+            <div class="team">
+                <div class="team-name">${f.home_team}</div>
+                <div class="team-xg">xG ${g.home_xg.toFixed(2)}</div>
+            </div>
+            <div class="vs">VS</div>
+            <div class="team">
+                <div class="team-name">${f.away_team}</div>
+                <div class="team-xg">xG ${g.away_xg.toFixed(2)}</div>
+            </div>
+        </div>
+        <div class="probs">
+            <div class="probs-labels">
+                <span>${g.win_prob}%</span>
+                <span>${g.draw_prob}%</span>
+                <span>${g.loss_prob}%</span>
+            </div>
+            <div class="probs-bar">
+                <div class="prob-seg seg-win" style="width:0" data-w="${g.win_prob}%"></div>
+                <div class="prob-seg seg-draw" style="width:0" data-w="${g.draw_prob}%"></div>
+                <div class="prob-seg seg-loss" style="width:0" data-w="${g.loss_prob}%"></div>
+            </div>
+            <div class="prob-verdict ${verdictClass}">${verdictText}</div>
+        </div>
+        <div class="stats">
+            <div class="stat">
+                <span class="stat-label">Likely Score</span>
+                <span class="stat-value score-val">${g.most_likely_score}</span>
+                <span class="stat-sub">BTTS ${g.btts_prob}% · O2.5 ${g.over_2_5_prob}%</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Corners</span>
+                <span class="stat-value">${c.total_expected}</span>
+                <span class="stat-sub">O8.5 ${c.over_8_5_prob}% · O9.5 ${c.over_9_5_prob}%</span>
+            </div>
+        </div>
+    `;
+    return card;
+}
+
+init();
+</script>
+</body>
+</html>

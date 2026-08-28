@@ -62,4 +62,13 @@ COMPETITIONS = {
         "difficulty_weight": 0.95,
         "prior_competition": "epl_2024",
     },
+    # 2026/27 season: current live season for prediction insights.
+    # Cross-season prior from epl_2025 seeds early-gameweek ratings.
+    "epl_2026": {
+        "api_sports": {"league": 39, "season": 2026},
+        "sportradar": {"urn": "sr:competition:17"},
+        "difficulty_weight": 0.95,
+        "prior_competition": "epl_2025",
+        "sportradar_only": True,
+    },
 }
