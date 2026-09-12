@@ -3,7 +3,7 @@ import json
 import os
 from contextlib import contextmanager
 
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "predictable.db")
+DB_PATH = os.environ.get("DB_PATH", os.path.join(os.path.dirname(os.path.dirname(__file__)), "predictable.db"))
 
 def init_db():
     """Initializes the SQLite database with the required schema."""

@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predictable — Strategy Simulator & Calculator</title>
+    <meta name="description" content="Simulate football betting strategies using Monte Carlo analysis and mathematical expectations.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js for gorgeous interactive visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --bg: #06060e;
+            --surface: rgba(255,255,255,0.035);
+            --surface-hover: rgba(255,255,255,0.06);
+            --border: rgba(255,255,255,0.08);
+            --border-hover: rgba(255,255,255,0.18);
+            --text: #f0f0f5;
+            --text-muted: #8a8aa0;
+            --text-dim: #5a5a72;
+            --accent: #8b5cf6;
+            --accent-glow: rgba(139,92,246,0.25);
+            --epl-purple: #3d195b;
+            --epl-green: #00ff87;
+            --epl-pink: #e90052;
+            --win: #10b981;
+            --draw: #f59e0b;
+            --loss: #ef4444;
+            --radius: 14px;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg); color: var(--text);
+            min-height: 100vh; overflow-x: hidden;
+        }
+        h1,h2,h3,.score-val, .calc-val { font-family: 'Outfit', sans-serif; }
+
+        /* === Ambient background === */
+        .bg-effects { position:fixed; inset:0; z-index:-1; overflow:hidden; pointer-events:none; }
+        .orb { position:absolute; border-radius:50%; filter:blur(120px); opacity:.35; animation:drift 25s infinite alternate ease-in-out; }
+        .orb-1 { top:-15%; left:-10%; width:55vw; height:55vw; background:radial-gradient(circle,#3d195b 0%,transparent 70%); }
+        .orb-2 { bottom:-10%; right:-15%; width:45vw; height:45vw; background:radial-gradient(circle,#00ff87 0%,transparent 70%); opacity:.15; animation-delay:-8s; }
+        .orb-3 { top:35%; left:55%; width:30vw; height:30vw; background:radial-gradient(circle,#e90052 0%,transparent 70%); opacity:0.12; animation-delay:-14s; }
+        @keyframes drift { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(4%,6%) scale(1.08)} }
+
+        /* === Nav === */
+        nav {
+            display:flex; align-items:center; justify-content:space-between;
+            padding:1rem 2rem; border-bottom:1px solid var(--border);
+            background:rgba(6,6,14,0.7); backdrop-filter:blur(16px);
+            position:sticky; top:0; z-index:100;
+        }
+        .nav-brand { font-family:'Outfit'; font-weight:800; font-size:1.25rem;
+            background:linear-gradient(135deg,#fff,#c4b5fd); -webkit-background-clip:text; -webkit-text-fill-color:transparent; text-decoration:none; }
+        .nav-links { display:flex; gap:1.5rem; }
+        .nav-links a { color:var(--text-muted); text-decoration:none; font-size:.9rem; font-weight:500; transition:color .2s; }
+        .nav-links a:hover, .nav-links a.active { color:var(--epl-green); }
+
+        /* === Hero === */
+        .hero {
+            text-align:center; padding:3rem 2rem 2rem;
+            border-bottom:1px solid var(--border);
+            background:rgba(0,0,0,.2); backdrop-filter:blur(10px);
+        }
+        .hero h1 {
+            font-size:2.8rem; font-weight:800; margin-bottom:.6rem;
+            background:linear-gradient(to right,#fff 30%,#00ff87);
+            -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+        }
+        .hero .badge {
+            display:inline-block; font-family:'Inter'; font-size:.8rem; font-weight:600;
+            background:linear-gradient(135deg,var(--epl-purple),var(--epl-pink));
+            color:#fff; padding:.3rem .9rem; border-radius:20px; letter-spacing:.5px;
+            margin-left:.5rem; vertical-align:middle; -webkit-text-fill-color:white;
+        }
+        .hero p { color:var(--text-muted); font-size:1rem; max-width:550px; margin:.5rem auto 0; }
+
+        /* === Container === */
+        .container { max-width:1100px; margin:0 auto; padding:2rem; }
+        
+        /* === Layout Split === */
+        .split { display:grid; grid-template-columns: 1.1fr 0.9fr; gap:1.5rem; margin-bottom:1.5rem; }
+        @media(max-width:900px) {
+            .split { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+            padding:1.6rem; backdrop-filter:blur(12px);
+            transition:border-color .3s ease, box-shadow .3s ease;
+            position:relative; overflow:hidden;
+        }
+        .card:hover { border-color:var(--border-hover); box-shadow:0 12px 32px rgba(0,0,0,.4); }
+
+        .card-title {
+            font-size: 1.25rem; font-weight:700; margin-bottom:1.2rem;
+            display:flex; align-items:center; gap:.5rem; color:#fff;
+            border-bottom: 1px solid var(--border); padding-bottom: 0.6rem;
+        }
+
+        /* === Presets === */
+        .preset-grid { display:grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem; margin-bottom: 1.2rem; }
+        .preset-btn {
+            background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+            color: var(--text-muted); padding: 0.8rem 0.4rem; border-radius: 8px;
+            cursor: pointer; font-size: 0.75rem; text-align:center; font-family:inherit;
+            transition: all 0.2s ease; display:flex; flex-direction:column; gap: 0.2rem;
+        }
+        .preset-btn:hover { background: var(--surface-hover); border-color: var(--border-hover); color: #fff; }
+        .preset-btn.active {
+            background: linear-gradient(135deg, rgba(139,92,246,0.2), rgba(0,255,135,0.1));
+            border-color: var(--epl-green); color: #fff; font-weight: 600;
+        }
+        .preset-name { font-weight: 700; font-size: 0.82rem; color: #fff; }
+
+        /* === Forms === */
+        .form-group { margin-bottom: 1.2rem; }
+        .form-label {
+            display:flex; justify-content:space-between; align-items:center;
+            font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.5rem;
+            font-weight: 500; text-transform:uppercase; letter-spacing: 0.5px;
+        }
+        .form-label span.value { font-family:'Outfit'; font-size: 1rem; color: var(--epl-green); font-weight: 700; }
+        
+        .input-slider {
+            width: 100%; height: 6px; background: rgba(255,255,255,0.1);
+            border-radius: 3px; outline: none; -webkit-appearance: none;
+            cursor: pointer; accent-color: var(--accent);
+        }
+        .input-num-container { display:flex; gap: 0.5rem; }
+        .input-num {
+            flex:1; background: rgba(0,0,0,0.3); border: 1px solid var(--border);
+            color: var(--text); padding: 0.6rem 0.8rem; border-radius: 8px;
+            font-family: inherit; font-size: 0.9rem; outline:none; transition: all 0.2s;
+        }
+        .input-num:focus { border-color: var(--accent); background: rgba(0,0,0,0.5); }
+
+        /* === Diagnostics === */
+        .diag-grid { display:grid; grid-template-columns: repeat(2, 1fr); gap: 0.8rem; }
+        .diag-box {
+            background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.02);
+            border-radius: 10px; padding: 1rem; display:flex; flex-direction:column; gap: 0.15rem;
+        }
+        .diag-label { font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+        .diag-val { font-size: 1.4rem; font-weight: 700; color: #fff; }
+        .diag-val.win-val { color: var(--epl-green); }
+        .diag-val.loss-val { color: var(--epl-pink); }
+        .diag-sub { font-size: 0.72rem; color: var(--text-muted); }
+
+        /* === Binomial indicator === */
+        .prob-bar-container { width: 100%; height: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow:hidden; margin-top:0.4rem; }
+        .prob-bar-fill { height: 100%; background: linear-gradient(to right, var(--accent), var(--epl-green)); border-radius: 4px; width: 0%; transition: width 0.8s ease; }
+
+        /* === Wide section === */
+        .wide-card { margin-top: 1.5rem; }
+        .sim-header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap: 1rem; margin-bottom: 1.2rem; }
+        .sim-actions { display:flex; gap: 0.8rem; align-items:center; }
+        
+        .btn {
+            background: var(--accent); color: #08140c; border:none; border-radius: 8px;
+            padding: 0.7rem 1.4rem; font-weight: 700; font-family: inherit; font-size: 0.9rem;
+            cursor: pointer; transition: all 0.2s; display:inline-flex; align-items:center; gap: 0.4rem;
+        }
+        .btn:hover { background: #a78bfa; transform: translateY(-1px); }
+        .btn:active { transform: translateY(0); }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+        .btn-outline:hover { background: var(--surface-hover); border-color: var(--border-hover); color:#fff; }
+
+        /* === Sim Results === */
+        .sim-summary {
+            display:grid; grid-template-columns: repeat(4, 1fr); gap: 0.8rem;
+            margin-bottom: 1.2rem; background: rgba(0,0,0,0.15); padding: 1rem; border-radius: 10px;
+        }
+        @media(max-width:600px) {
+            .sim-summary { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        .chart-container {
+            position: relative; height: 320px; width: 100%;
+            background: rgba(0,0,0,0.2); border-radius: 10px; border: 1px solid rgba(255,255,255,0.03);
+            padding: 1rem; margin-bottom: 1.2rem;
+        }
+
+        /* === Collapsible Table === */
+        .details-toggle {
+            color: var(--accent); cursor: pointer; font-size: 0.85rem; font-weight: 600;
+            display:flex; align-items:center; gap: 0.2rem; user-select:none; margin-top: 0.5rem;
+        }
+        .details-toggle:hover { color: #a78bfa; }
+        
+        .sim-table-container {
+            max-height: 350px; overflow-y: auto; border: 1px solid var(--border);
+            border-radius: 8px; margin-top: 1rem; display:none; background: rgba(0,0,0,0.3);
+        }
+        .sim-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left; }
+        .sim-table th, .sim-table td { padding: 0.6rem 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .sim-table th { background: rgba(0,0,0,0.5); color: var(--text-muted); font-weight: 600; position: sticky; top:0; }
+        .sim-table td.win { color: var(--epl-green); font-weight: 600; }
+        .sim-table td.loss { color: var(--epl-pink); font-weight: 600; }
+
+        /* === Footer === */
+        footer { text-align:center; padding:3rem 2rem; color:var(--text-dim); font-size:.8rem; border-top:1px solid var(--border); margin-top:3rem; }
+        footer a { color:var(--text-muted); text-decoration:none; }
+    </style>
+</head>
+<body>
+
+<div class="bg-effects">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+</div>
+
+<nav>
+    <a href="/" class="nav-brand">Predictable</a>
+    <div class="nav-links">
+        <a href="/epl">EPL 26/27</a>
+        <a href="/calculator" class="active">Acca Calculator</a>
+        <a href="/game">Beat the Model</a>
+        <a href="/game/gameweek">Gameweek Mode</a>
+    </div>
+</nav>
+
+<header class="hero">
+    <h1>Strategy <span class="badge">Simulator</span></h1>
+    <p>Simulate disciplined betting rules, examine historical returns, and run Monte Carlo bankroll projections.</p>
+</header>
+
+<main class="container">
+    <div class="split">
+        <!-- Settings Card -->
+        <div class="card">
+            <div class="card-title">⚙️ Strategy Settings</div>
+            
+            <div class="form-group">
+                <label class="form-label">Strategy Preset</label>
+                <div class="preset-grid">
+                    <button class="preset-btn active" id="btnAcca" onclick="setPreset('acca')">
+                        <span class="preset-name">🏆 3-Leg Acca</span>
+                        <span>Win: 62.2% | Odds: 2.00</span>
+                    </button>
+                    <button class="preset-btn" id="btnCorners" onclick="setPreset('corners')">
+                        <span class="preset-name">📐 Opt Corners (Singles)</span>
+                        <span>Win: 73.3% | Odds: 1.25</span>
+                    </button>
+                    <button class="preset-btn" id="btnOvers" onclick="setPreset('overs')">
+                        <span class="preset-name">🔋 3-Corner Acca</span>
+                        <span>Win: 64.9% | Odds: 2.00</span>
+                    </button>
+                    <button class="preset-btn" id="btnCut" onclick="setPreset('cut')">
+                        <span class="preset-name">✂️ 10-Match Cut-2</span>
+                        <span>Win: 80.3% | Odds: 3.00</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Payout Rule</label>
+                <div class="input-num-container" style="padding: 0.2rem 0.6rem;">
+                    <select id="inputPayoutRule" class="input-num" style="background: transparent; border: none; color: var(--text); font-size: 0.9rem; outline: none; cursor: pointer; width: 100%;" onchange="updateInputs()">
+                        <option value="acca" style="background: var(--bg-card); color: var(--text);">Standard Accumulator (All legs win)</option>
+                        <option value="singles" style="background: var(--bg-card); color: var(--text);">Singles (Graded match-by-match)</option>
+                        <option value="flexi" style="background: var(--bg-card); color: var(--text);">SportyInsure / Flexi (Fixed Odds Insurance)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="form-label">
+                    <span>Win Rate (Probability)</span>
+                    <span class="value" id="winRateVal">62.2%</span>
+                </div>
+                <input type="range" class="input-slider" id="inputWinRate" min="20" max="95" step="0.1" value="62.2" oninput="updateInputs()">
+            </div>
+
+            <div class="form-group">
+                <div class="form-label">
+                    <span>Average Decimal Odds</span>
+                    <span class="value" id="oddsVal">2.00</span>
+                </div>
+                <input type="range" class="input-slider" id="inputOdds" min="1.10" max="5.00" step="0.05" value="2.00" oninput="updateInputs()">
+            </div>
+
+            <div class="split" style="grid-template-columns: 1fr 1fr; gap: 0.8rem; margin-bottom: 0;">
+                <div class="form-group">
+                    <label class="form-label">Stake per Bet ($)</label>
+                    <div class="input-num-container">
+                        <input type="number" class="input-num" id="inputStake" value="1000" min="1" step="50" oninput="updateInputs()">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Total Bets / GWs</label>
+                    <div class="input-num-container">
+                        <input type="number" class="input-num" id="inputBets" value="38" min="1" max="1000" oninput="updateInputs()">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Initial Bankroll ($)</label>
+                <div class="input-num-container">
+                    <input type="number" class="input-num" id="inputBankroll" value="10000" min="10" step="500" oninput="updateInputs()">
+                </div>
+            </div>
+        </div>
+
+        <!-- Expected Outcomes Card -->
+        <div class="card" style="display:flex; flex-direction:column; justify-content:space-between;">
+            <div>
+                <div class="card-title">📊 Mathematical Expectations</div>
+                
+                <div class="diag-grid">
+                    <div class="diag-box">
+                        <span class="diag-label">Expected Net Profit</span>
+                        <span class="diag-val win-val" id="expProfit">$9,240.00</span>
+                        <span class="diag-sub">Assuming perfect variance collapse</span>
+                    </div>
+                    <div class="diag-box">
+                        <span class="diag-label">Expected ROI</span>
+                        <span class="diag-val win-val" id="expROI">24.3%</span>
+                        <span class="diag-sub">Net Profit / Total Stakes</span>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 1.5rem; margin-bottom: 1rem;">
+                <div class="diag-box" style="border: 1px solid rgba(255,255,255,0.06); background: rgba(0,0,0,0.3);">
+                    <span class="diag-label" style="color: #fff; font-weight: 600;">Exact Profit Probability</span>
+                    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:0.2rem;">
+                        <span class="diag-val win-val" id="profitProb" style="font-size: 1.8rem; font-family:'Outfit'; text-shadow:0 0 10px rgba(0,255,135,0.3);">89.4%</span>
+                        <span class="diag-sub" id="profitProbSub">Need &ge; 20 wins to profit</span>
+                    </div>
+                    <div class="prob-bar-container">
+                        <div class="prob-bar-fill" id="probBarFill"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="font-size:0.75rem; color: var(--text-dim); line-height: 1.4;">
+                Expected numbers represent long-term math. In any single run of 38 gameweeks, standard deviation will introduce volatility. Use the Monte Carlo simulator below to test risk.
+            </div>
+        </div>
+    </div>
+
+    <!-- Monte Carlo Simulator Section -->
+    <div class="card wide-card">
+        <div class="sim-header">
+            <div>
+                <div class="card-title" style="margin-bottom:0.2rem; border:none; padding:0;">📈 Monte Carlo Bot Simulator</div>
+                <div style="font-size: 0.8rem; color:var(--text-muted);">Simulate placing these bets over a season and tracking bankroll.</div>
+            </div>
+            <div class="sim-actions">
+                <button class="btn" id="btnRunSim" onclick="runSimulation()">
+                    <span>⚡ Run Live Bot Simulation</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="sim-summary">
+            <div class="stat">
+                <span class="stat-label">Simulated Wins / Losses</span>
+                <span class="stat-value" id="simWins">--</span>
+                <span class="stat-sub" id="simActualRate">--</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Ending Bankroll</span>
+                <span class="stat-value" id="simEnding">--</span>
+                <span class="stat-sub" id="simEndingChange">--</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Peak Bankroll</span>
+                <span class="stat-value" id="simPeak">--</span>
+                <span class="stat-sub" id="simPeakChange">--</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Max Drawdown</span>
+                <span class="stat-value" style="color:var(--epl-pink);" id="simDrawdown">--</span>
+                <span class="stat-sub" id="simDrawdownAmt">--</span>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <canvas id="simChart"></canvas>
+        </div>
+
+        <div class="details-toggle" onclick="toggleDetails()">
+            <span id="detailsArrow">▶</span> <span>View simulated bet logs & week-by-week details</span>
+        </div>
+
+        <div class="sim-table-container" id="tableContainer">
+            <table class="sim-table">
+                <thead>
+                    <tr>
+                        <th>Bet #</th>
+                        <th>Stake</th>
+                        <th>Outcome</th>
+                        <th>P/L</th>
+                        <th>New Bankroll</th>
+                    </tr>
+                </thead>
+                <tbody id="simTableBody">
+                    <tr>
+                        <td colspan="5" style="text-align:center; color:var(--text-dim);">No simulation run. Click the button above to run a bot simulation!</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<footer>
+    <p>Built with ❤️ by <a href="/">Predictable AI</a> · Poisson engine with leak-free cross-season priors</p>
+</footer>
+
+<script>
+    // Presets definition
+    const presets = {
+        acca: { win: 62.2, odds: 2.00, bets: 38, rule: 'acca' },
+        corners: { win: 73.3, odds: 1.25, bets: 380, rule: 'singles' },
+        overs: { win: 64.9, odds: 2.00, bets: 38, rule: 'acca' },
+        cut: { win: 80.3, odds: 3.00, bets: 38, rule: 'flexi' }
+    };
+
+    let currentPreset = 'acca';
+    let chartInstance = null;
+
+    // Helper: log-factorial for binomial distribution
+    function logFactorial(n) {
+        let ans = 0;
+        for (let i = 2; i <= n; i++) {
+            ans += Math.log(i);
+        }
+        return ans;
+    }
+
+    // Binomial probability P(X = k)
+    function binomialProbability(n, k, p) {
+        if (k < 0 || k > n) return 0;
+        if (p === 0) return k === 0 ? 1 : 0;
+        if (p === 1) return k === n ? 1 : 0;
+        const lnP = logFactorial(n) - logFactorial(k) - logFactorial(n - k) + k * Math.log(p) + (n - k) * Math.log(1 - p);
+        return Math.exp(lnP);
+    }
+
+    // Probability of profit (Standard and Singles)
+    function getProfitProbability(n, o, p) {
+        const kMin = Math.floor(n / o) + 1;
+        if (kMin > n) return { prob: 0, kMin };
+        if (kMin <= 0) return { prob: 1, kMin: 0 };
+        let sum = 0;
+        for (let k = kMin; k <= n; k++) {
+            sum += binomialProbability(n, k, p);
+        }
+        return { prob: sum, kMin };
+    }
+
+    function setPreset(name) {
+        currentPreset = name;
+        
+        // Remove active class from all preset buttons
+        document.getElementById('btnAcca').classList.remove('active');
+        document.getElementById('btnCorners').classList.remove('active');
+        document.getElementById('btnOvers').classList.remove('active');
+        document.getElementById('btnCut').classList.remove('active');
+        
+        // Add active class
+        if (name === 'acca') document.getElementById('btnAcca').classList.add('active');
+        else if (name === 'corners') document.getElementById('btnCorners').classList.add('active');
+        else if (name === 'overs') document.getElementById('btnOvers').classList.add('active');
+        else if (name === 'cut') document.getElementById('btnCut').classList.add('active');
+        
+        // Set values and dropdown
+        document.getElementById('inputWinRate').value = presets[name].win;
+        document.getElementById('inputOdds').value = presets[name].odds.toFixed(2);
+        document.getElementById('inputBets').value = presets[name].bets;
+        document.getElementById('inputPayoutRule').value = presets[name].rule;
+        
+        updateInputs();
+    }
+
+    function updateInputs() {
+        const wr = parseFloat(document.getElementById('inputWinRate').value);
+        const odds = parseFloat(document.getElementById('inputOdds').value);
+        const stake = parseFloat(document.getElementById('inputStake').value) || 0;
+        const bets = parseInt(document.getElementById('inputBets').value) || 0;
+        const bankroll = parseFloat(document.getElementById('inputBankroll').value) || 0;
+        const rule = document.getElementById('inputPayoutRule').value;
+
+        document.getElementById('winRateVal').innerText = wr.toFixed(1) + '%';
+        document.getElementById('oddsVal').innerText = odds.toFixed(2);
+
+        // Expected Calculations
+        const p = wr / 100;
+        const netProfitPerBet = (stake * (odds - 1) * p) - (stake * (1 - p));
+        const { prob, kMin } = getProfitProbability(bets, odds, p);
+        const probPct = prob * 100;
+        const subText = rule === 'flexi' 
+            ? `Need ≥ ${kMin} insured wins out of ${bets} to profit`
+            : `Need ≥ ${kMin} wins of ${bets} to end in profit`;
+
+        const totalExpProfit = netProfitPerBet * bets;
+        const totalStake = stake * bets;
+        const expROI = totalStake > 0 ? (totalExpProfit / totalStake * 100) : 0;
+
+        // Update indicators
+        const profitEl = document.getElementById('expProfit');
+        profitEl.innerText = (totalExpProfit >= 0 ? '$' : '-$') + Math.abs(totalExpProfit).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        if (totalExpProfit >= 0) {
+            profitEl.className = "diag-val win-val";
+        } else {
+            profitEl.className = "diag-val loss-val";
+        }
+
+        const roiEl = document.getElementById('expROI');
+        roiEl.innerText = (expROI >= 0 ? '+' : '') + expROI.toFixed(1) + '%';
+        if (expROI >= 0) {
+            roiEl.className = "diag-val win-val";
+        } else {
+            roiEl.className = "diag-val loss-val";
+        }
+
+        const probEl = document.getElementById('profitProb');
+        probEl.innerText = probPct.toFixed(1) + '%';
+        document.getElementById('profitProbSub').innerText = subText;
+        document.getElementById('probBarFill').style.width = probPct.toFixed(1) + '%';
+
+        // Check if any sliders moved from preset definitions. If so, clear preset selection
+        if (currentPreset && (wr !== presets[currentPreset].win || odds !== presets[currentPreset].odds || bets !== presets[currentPreset].bets || rule !== presets[currentPreset].rule)) {
+            document.getElementById('btnAcca').classList.remove('active');
+            document.getElementById('btnCorners').classList.remove('active');
+            document.getElementById('btnOvers').classList.remove('active');
+            document.getElementById('btnCut').classList.remove('active');
+            currentPreset = null;
+        }
+    }
+
+    // Toggle Details Table
+    let detailsVisible = false;
+    function toggleDetails() {
+        detailsVisible = !detailsVisible;
+        const container = document.getElementById('tableContainer');
+        const arrow = document.getElementById('detailsArrow');
+        if (detailsVisible) {
+            container.style.display = 'block';
+            arrow.innerText = '▼';
+        } else {
+            container.style.display = 'none';
+            arrow.innerText = '▶';
+        }
+    }
+
+    // Simulation
+    function runSimulation() {
+        const wr = parseFloat(document.getElementById('inputWinRate').value) / 100;
+        const odds = parseFloat(document.getElementById('inputOdds').value);
+        const stake = parseFloat(document.getElementById('inputStake').value) || 0;
+        const bets = parseInt(document.getElementById('inputBets').value) || 0;
+        const startBankroll = parseFloat(document.getElementById('inputBankroll').value) || 0;
+        const rule = document.getElementById('inputPayoutRule').value;
+
+        let bankroll = startBankroll;
+        let peak = startBankroll;
+        let maxDrawdown = 0;
+        let wins = 0;
+        let losses = 0;
+
+        const history = [startBankroll];
+        const tableRows = [];
+
+        for (let i = 1; i <= bets; i++) {
+            // Check if bankrupt
+            if (bankroll < stake) {
+                history.push(bankroll);
+                tableRows.push(`
+                    <tr>
+                        <td>Bet ${i}</td>
+                        <td>$${stake.toLocaleString()}</td>
+                        <td style="color:var(--text-muted); font-weight:600;">BANKRUPT</td>
+                        <td>$0.00</td>
+                        <td>$${bankroll.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    </tr>
+                `);
+                continue;
+            }
+
+            let net = 0;
+            let outcome = '';
+            let cls = '';
+
+            const win = Math.random() < wr;
+            if (win) {
+                wins++;
+                net = stake * (odds - 1);
+                outcome = rule === 'flexi' ? 'WIN (Insured)' : 'WIN';
+                cls = 'win';
+            } else {
+                losses++;
+                net = -stake;
+                outcome = 'LOSS';
+                cls = 'loss';
+            }
+
+            bankroll += net;
+
+            if (bankroll > peak) {
+                peak = bankroll;
+            }
+
+            const dd = peak > 0 ? (peak - bankroll) / peak : 0;
+            if (dd > maxDrawdown) {
+                maxDrawdown = dd;
+            }
+
+            history.push(bankroll);
+            tableRows.push(`
+                <tr>
+                    <td>Bet ${i}</td>
+                    <td>$${stake.toLocaleString()}</td>
+                    <td class="${cls}">${outcome}</td>
+                    <td class="${cls}">${net >= 0 ? '+$' : '-$'}${Math.abs(net).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    <td>$${bankroll.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                </tr>
+            `);
+        }
+
+        // Update Sim Stats
+        document.getElementById('simWins').innerText = `${wins}W / ${losses}L`;
+        document.getElementById('simActualRate').innerText = `Win Rate: ${(wins / (wins+losses) * 100 || 0).toFixed(1)}%`;
+        
+        const endEl = document.getElementById('simEnding');
+        endEl.innerText = '$' + bankroll.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        const change = bankroll - startBankroll;
+        const changePct = (change / startBankroll) * 100;
+        const changeEl = document.getElementById('simEndingChange');
+        changeEl.innerText = (change >= 0 ? '+' : '') + changePct.toFixed(1) + '%';
+        if (change >= 0) {
+            endEl.style.color = 'var(--epl-green)';
+            changeEl.style.color = 'var(--epl-green)';
+        } else {
+            endEl.style.color = 'var(--epl-pink)';
+            changeEl.style.color = 'var(--epl-pink)';
+        }
+
+        document.getElementById('simPeak').innerText = '$' + peak.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        document.getElementById('simPeakChange').innerText = `Peak Profit: +$${(peak - startBankroll).toLocaleString()}`;
+        document.getElementById('simDrawdown').innerText = (maxDrawdown * 100).toFixed(1) + '%';
+        document.getElementById('simDrawdownAmt').innerText = `Max Drop: -$${(maxDrawdown * peak).toLocaleString(undefined, {maximumFractionDigits:0})}`;
+
+        // Populate table
+        document.getElementById('simTableBody').innerHTML = tableRows.join('');
+
+        // Draw Chart
+        drawChart(history);
+    }
+
+
+    function drawChart(dataPoints) {
+        const labels = Array.from({length: dataPoints.length}, (_, i) => i === 0 ? 'Start' : `Bet ${i}`);
+        
+        if (chartInstance) {
+            chartInstance.destroy();
+        }
+
+        const ctx = document.getElementById('simChart').getContext('2d');
+        
+        // Gradient for chart fill
+        const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+        gradient.addColorStop(0, 'rgba(139,92,246,0.3)');
+        gradient.addColorStop(1, 'rgba(139,92,246,0.0)');
+
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Bankroll ($)',
+                    data: dataPoints,
+                    borderColor: '#8b5cf6',
+                    borderWidth: 3,
+                    pointBackgroundColor: '#fff',
+                    pointHoverRadius: 6,
+                    tension: 0.15,
+                    fill: true,
+                    backgroundColor: gradient
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255,255,255,0.03)' },
+                        ticks: { color: '#8a8aa0', font: { size: 10 } }
+                    },
+                    y: {
+                        grid: { color: 'rgba(255,255,255,0.03)' },
+                        ticks: {
+                            color: '#8a8aa0',
+                            font: { size: 10 },
+                            callback: function(val) {
+                                return '$' + val.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Init
+    updateInputs();
+    runSimulation();
+</script>
+</body>
+</html>

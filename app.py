@@ -18,6 +18,11 @@ def index():
 def epl_page():
     return send_from_directory('static', 'epl.html')
 
+@app.route('/calculator')
+def calculator_page():
+    return send_from_directory('static', 'calculator.html')
+
+
 # ---------------------------------------------------------------------------
 # EPL 2026/27 prediction endpoints
 # ---------------------------------------------------------------------------
@@ -113,6 +118,22 @@ def epl_gameweek_predictions(gw):
         top_score = list(res['score_probs'].keys())[0]
         score_str = f"{top_score[0]}–{top_score[1]}"
 
+        total_exp = cp['results']['total_expected']
+        if total_exp < 9.0:
+            rec_bet = "Under 11.5"
+        elif total_exp < 10.0:
+            rec_bet = "Over 7.5"
+        else:
+            rec_bet = "Over 8.5"
+
+        total_goal_exp = gp['home_xg'] + gp['away_xg']
+        if total_goal_exp > 3.0:
+            rec_goal_bet = "Over 2.5"
+        elif total_goal_exp > 2.5:
+            rec_goal_bet = "Over 1.5"
+        else:
+            rec_goal_bet = "Under 3.5"
+
         fixture = {
             'match_id': match['id'],
             'date': match['date'],
@@ -122,6 +143,7 @@ def epl_gameweek_predictions(gw):
             'goals': {
                 'home_xg': round(gp['home_xg'], 2),
                 'away_xg': round(gp['away_xg'], 2),
+                'recommended_bet': rec_goal_bet,
                 'win_prob': round(h, 1),
                 'draw_prob': round(d, 1),
                 'loss_prob': round(a, 1),
@@ -132,7 +154,8 @@ def epl_gameweek_predictions(gw):
             'corners': {
                 'home_expected': round(cp['home_expected'], 1),
                 'away_expected': round(cp['away_expected'], 1),
-                'total_expected': round(cp['results']['total_expected'], 1),
+                'total_expected': round(total_exp, 1),
+                'recommended_bet': rec_bet,
                 'over_8_5_prob': round(cp['results']['over_lines'].get(8.5, 0), 1),
                 'over_9_5_prob': round(cp['results']['over_lines'].get(9.5, 0), 1),
             },
@@ -147,7 +170,99 @@ def epl_gameweek_predictions(gw):
 
         fixtures.append(fixture)
 
-    return jsonify({'success': True, 'gameweek': gw, 'fixtures': fixtures})
+    acc_legs = []
+    if fixtures:
+        # 1. Safest Goal Over (highest xG, > 2.50)
+        over_goal_cands = [f for f in fixtures if (f['goals']['home_xg'] + f['goals']['away_xg']) > 2.5]
+        if over_goal_cands:
+            best_goal_over = max(over_goal_cands, key=lambda f: f['goals']['home_xg'] + f['goals']['away_xg'])
+            acc_legs.append({
+                'match': f"{best_goal_over['home_team']} vs {best_goal_over['away_team']}",
+                'pick': "Over 1.5 Goals",
+                'reason': f"Highest xG ({round(best_goal_over['goals']['home_xg'] + best_goal_over['goals']['away_xg'], 2)})"
+            })
+            
+        # 2. Safest Corner Over (highest Exp Corners, >= 9.5)
+        over_corner_cands = [f for f in fixtures if f['corners']['total_expected'] >= 9.5]
+        if over_corner_cands:
+            best_corner_over = max(over_corner_cands, key=lambda f: f['corners']['total_expected'])
+            acc_legs.append({
+                'match': f"{best_corner_over['home_team']} vs {best_corner_over['away_team']}",
+                'pick': "Over 6.5 Corners",
+                'reason': f"High Expected Corners ({best_corner_over['corners']['total_expected']})"
+            })
+            
+        # 3. Safest Corner Under (lowest Exp Corners, < 9.0)
+        under_corner_cands = [f for f in fixtures if f['corners']['total_expected'] < 9.0]
+        if under_corner_cands:
+            best_corner_under = min(under_corner_cands, key=lambda f: f['corners']['total_expected'])
+            acc_legs.append({
+                'match': f"{best_corner_under['home_team']} vs {best_corner_under['away_team']}",
+                'pick': "Under 13.5 Corners",
+                'reason': f"Low Expected Corners ({best_corner_under['corners']['total_expected']})"
+            })
+            
+        # If we don't have 3 legs, fill with Goal Under (lowest xG, <= 2.5)
+        if len(acc_legs) < 3:
+            under_goal_cands = [f for f in fixtures if (f['goals']['home_xg'] + f['goals']['away_xg']) <= 2.5]
+            picked_matches = [leg['match'] for leg in acc_legs]
+            under_goal_cands = [f for f in under_goal_cands if f"{f['home_team']} vs {f['away_team']}" not in picked_matches]
+            if under_goal_cands:
+                best_goal_under = min(under_goal_cands, key=lambda f: f['goals']['home_xg'] + f['goals']['away_xg'])
+                acc_legs.append({
+                    'match': f"{best_goal_under['home_team']} vs {best_goal_under['away_team']}",
+                    'pick': "Under 4.5 Goals",
+                    'reason': f"Lowest xG ({round(best_goal_under['goals']['home_xg'] + best_goal_under['goals']['away_xg'], 2)})"
+                })
+                
+        # If still missing, fill with the safest Under 12.5 corners available
+        if len(acc_legs) < 3:
+            under_c_cands2 = [f for f in fixtures if f['corners']['total_expected'] < 9.5]
+            picked_matches = [leg['match'] for leg in acc_legs]
+            under_c_cands2 = [f for f in under_c_cands2 if f"{f['home_team']} vs {f['away_team']}" not in picked_matches]
+            if under_c_cands2:
+                best_c2 = min(under_c_cands2, key=lambda f: f['corners']['total_expected'])
+                acc_legs.append({
+                    'match': f"{best_c2['home_team']} vs {best_c2['away_team']}",
+                    'pick': "Under 12.5 Corners",
+                    'reason': f"Low Expected Corners ({best_c2['corners']['total_expected']})"
+                })
+                
+    acca = acc_legs[:3]
+
+    corner_acca_legs = []
+    if fixtures:
+        # Sort by total expected corners
+        sorted_by_corners = sorted(fixtures, key=lambda f: f['corners']['total_expected'])
+        
+        # 1. Safest Under
+        if len(sorted_by_corners) > 0:
+            c_under1 = sorted_by_corners[0]
+            corner_acca_legs.append({
+                'match': f"{c_under1['home_team']} vs {c_under1['away_team']}",
+                'pick': "Under 12.5 Corners",
+                'reason': f"Lowest Expected Corners ({c_under1['corners']['total_expected']})"
+            })
+            
+        # 2. 2nd Safest Under
+        if len(sorted_by_corners) > 1:
+            c_under2 = sorted_by_corners[1]
+            corner_acca_legs.append({
+                'match': f"{c_under2['home_team']} vs {c_under2['away_team']}",
+                'pick': "Under 12.5 Corners",
+                'reason': f"Low Expected Corners ({c_under2['corners']['total_expected']})"
+            })
+            
+        # 3. Safest Over
+        if len(sorted_by_corners) > 2:
+            c_over = sorted_by_corners[-1]
+            corner_acca_legs.append({
+                'match': f"{c_over['home_team']} vs {c_over['away_team']}",
+                'pick': "Over 7.5 Corners",
+                'reason': f"Highest Expected Corners ({c_over['corners']['total_expected']})"
+            })
+
+    return jsonify({'success': True, 'gameweek': gw, 'fixtures': fixtures, 'acca': acca, 'corner_acca': corner_acca_legs})
 
 
 @app.route('/api/predictions')
@@ -184,6 +299,22 @@ def get_predictions():
             corner_pred = predict_corners(home_name, away_name, competition_id)
             
             if goal_pred and corner_pred:
+                total_exp = corner_pred['results']['total_expected']
+                if total_exp < 9.0:
+                    rec_bet = "Under 11.5"
+                elif total_exp < 10.0:
+                    rec_bet = "Over 7.5"
+                else:
+                    rec_bet = "Over 8.5"
+
+                total_goal_exp = goal_pred['home_xg'] + goal_pred['away_xg']
+                if total_goal_exp > 3.0:
+                    rec_goal_bet = "Over 2.5"
+                elif total_goal_exp > 2.5:
+                    rec_goal_bet = "Over 1.5"
+                else:
+                    rec_goal_bet = "Under 3.5"
+
                 predictions.append({
                     'id': match['id'],
                     'date': match['date'],
@@ -192,6 +323,7 @@ def get_predictions():
                     'goals': {
                         'home_xg': round(goal_pred['home_xg'], 2),
                         'away_xg': round(goal_pred['away_xg'], 2),
+                        'recommended_bet': rec_goal_bet,
                         'win_prob': round(goal_pred['results']['home_win_prob'], 1),
                         'draw_prob': round(goal_pred['results']['draw_prob'], 1),
                         'loss_prob': round(goal_pred['results']['away_win_prob'], 1),
@@ -202,7 +334,8 @@ def get_predictions():
                     'corners': {
                         'home_expected': round(corner_pred['home_expected'], 1),
                         'away_expected': round(corner_pred['away_expected'], 1),
-                        'total_expected': round(corner_pred['results']['total_expected'], 1),
+                        'total_expected': round(total_exp, 1),
+                        'recommended_bet': rec_bet,
                         'most_likely_total': corner_pred['results']['most_likely_score'],
                         'over_8_5_prob': round(corner_pred['results']['over_lines'].get(8.5, 0), 1),
                         'over_9_5_prob': round(corner_pred['results']['over_lines'].get(9.5, 0), 1)

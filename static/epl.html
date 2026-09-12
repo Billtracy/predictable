@@ -157,6 +157,35 @@
         footer { text-align:center; padding:3rem 2rem; color:var(--text-dim); font-size:.8rem; border-top:1px solid var(--border); margin-top:3rem; }
         footer a { color:var(--text-muted); text-decoration:none; }
 
+        /* === Acca Banner === */
+        .acca-banner {
+            background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(0,255,135,0.1));
+            border: 1px solid var(--border-hover);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .acca-banner h3 {
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+            color: #fff;
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+        .acca-legs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+        .acca-leg {
+            background: rgba(0,0,0,0.3);
+            padding: 1rem;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .acca-match { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.4rem; }
+        .acca-pick { font-size: 1.1rem; font-weight: 700; color: var(--epl-green); margin-bottom: 0.2rem; }
+        .acca-reason { font-size: 0.75rem; color: var(--text-dim); }
+
         /* === Responsive === */
         @media(max-width:768px) {
             .hero h1 { font-size:2rem; }
@@ -180,6 +209,7 @@
     <a href="/" class="nav-brand">Predictable</a>
     <div class="nav-links">
         <a href="/epl" class="active">EPL 26/27</a>
+        <a href="/calculator">Acca Calculator</a>
         <a href="/game">Beat the Model</a>
         <a href="/game/gameweek">Gameweek Mode</a>
     </div>
@@ -205,6 +235,19 @@
     </div>
     <div id="content" style="display:none">
         <div class="section-title" id="sectionTitle">⚽ Gameweek 1 Predictions</div>
+        
+        <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem;">
+            <div id="accaBanner" class="acca-banner" style="display:none; margin-bottom: 0; flex: 1 1 calc(50% - 0.5rem); min-width: 300px;">
+                <h3>🏆 Ultimate 3-Leg Acca</h3>
+                <div class="acca-legs" id="accaLegs"></div>
+            </div>
+            
+            <div id="cornerAccaBanner" class="acca-banner" style="display:none; margin-bottom: 0; flex: 1 1 calc(50% - 0.5rem); min-width: 300px; border-color: rgba(94, 234, 212, 0.2); background: linear-gradient(135deg, rgba(94, 234, 212, 0.05) 0%, rgba(94, 234, 212, 0.0) 100%);">
+                <h3 style="color: var(--epl-cyan);">📐 Optimum 3-Corner Acca</h3>
+                <div class="acca-legs" id="cornerAccaLegs"></div>
+            </div>
+        </div>
+
         <div class="grid" id="grid"></div>
     </div>
     <div id="empty" class="empty" style="display:none">
@@ -288,6 +331,43 @@ async function loadGameweek(gw) {
         const grid = $('grid');
         grid.innerHTML = '';
         data.fixtures.forEach(f => grid.appendChild(createCard(f)));
+        
+        const accaBanner = $('accaBanner');
+        const accaLegs = $('accaLegs');
+        if (data.acca && data.acca.length > 0) {
+            accaLegs.innerHTML = '';
+            data.acca.forEach(leg => {
+                accaLegs.innerHTML += `
+                    <div class="acca-leg">
+                        <div class="acca-match">${leg.match}</div>
+                        <div class="acca-pick">${leg.pick}</div>
+                        <div class="acca-reason">${leg.reason}</div>
+                    </div>
+                `;
+            });
+            accaBanner.style.display = 'block';
+        } else {
+            accaBanner.style.display = 'none';
+        }
+
+        const cornerAccaBanner = $('cornerAccaBanner');
+        const cornerAccaLegs = $('cornerAccaLegs');
+        if (data.corner_acca && data.corner_acca.length > 0) {
+            cornerAccaLegs.innerHTML = '';
+            data.corner_acca.forEach(leg => {
+                cornerAccaLegs.innerHTML += `
+                    <div class="acca-leg" style="border-color: rgba(94, 234, 212, 0.1);">
+                        <div class="acca-match">${leg.match}</div>
+                        <div class="acca-pick" style="color: var(--epl-cyan);">${leg.pick}</div>
+                        <div class="acca-reason">${leg.reason}</div>
+                    </div>
+                `;
+            });
+            cornerAccaBanner.style.display = 'block';
+        } else {
+            cornerAccaBanner.style.display = 'none';
+        }
+
         $('content').style.display = 'block';
 
         // Animate probability bars
@@ -345,14 +425,16 @@ function createCard(f) {
             <div class="prob-verdict ${verdictClass}">${verdictText}</div>
         </div>
         <div class="stats">
-            <div class="stat">
+            <div class="stat" style="position:relative;">
                 <span class="stat-label">Likely Score</span>
                 <span class="stat-value score-val">${g.most_likely_score}</span>
+                ${g.recommended_bet ? `<span style="position:absolute; top:0; right:0; background:rgba(0,255,135,0.1); color:var(--epl-green); padding:2px 6px; border-radius:4px; font-size:0.65rem; font-weight:700;">TIP: ${g.recommended_bet}</span>` : ''}
                 <span class="stat-sub">BTTS ${g.btts_prob}% · O2.5 ${g.over_2_5_prob}%</span>
             </div>
-            <div class="stat">
+            <div class="stat" style="position:relative;">
                 <span class="stat-label">Corners</span>
                 <span class="stat-value">${c.total_expected}</span>
+                ${c.recommended_bet ? `<span style="position:absolute; top:0; right:0; background:rgba(0,255,135,0.1); color:var(--epl-green); padding:2px 6px; border-radius:4px; font-size:0.65rem; font-weight:700;">TIP: ${c.recommended_bet}</span>` : ''}
                 <span class="stat-sub">O8.5 ${c.over_8_5_prob}% · O9.5 ${c.over_9_5_prob}%</span>
             </div>
         </div>
