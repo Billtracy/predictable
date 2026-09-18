@@ -185,6 +185,26 @@
         .acca-match { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.4rem; }
         .acca-pick { font-size: 1.1rem; font-weight: 700; color: var(--epl-green); margin-bottom: 0.2rem; }
         .acca-reason { font-size: 0.75rem; color: var(--text-dim); }
+        .acca-leg.won { border-color: rgba(16,185,129,0.4); }
+        .acca-leg.lost { border-color: rgba(239,68,68,0.35); opacity: .8; }
+        .acca-verdict { display:inline-block; font-size:.68rem; font-weight:700; padding:.1rem .5rem; border-radius:8px; margin-top:.4rem; }
+        .acca-verdict.won { background:rgba(16,185,129,0.15); color:var(--win); }
+        .acca-verdict.lost { background:rgba(239,68,68,0.15); color:var(--loss); }
+
+        /* === Final result badge on concluded fixture cards === */
+        .card.concluded { border-color:rgba(255,255,255,.14); }
+        .ft-banner {
+            display:flex; align-items:center; justify-content:center; gap:.6rem;
+            background:rgba(255,255,255,.04); border:1px solid var(--border);
+            border-radius:10px; padding:.6rem; margin-bottom:1rem;
+        }
+        .ft-tag { font-size:.65rem; font-weight:700; letter-spacing:.5px; color:var(--text-dim);
+            background:rgba(255,255,255,.06); padding:.1rem .45rem; border-radius:6px; }
+        .ft-score { font-family:'Outfit'; font-weight:800; font-size:1.3rem; }
+        .bet-verdict { display:inline-flex; align-items:center; gap:.3rem; font-size:.65rem; font-weight:700;
+            padding:2px 6px; border-radius:4px; }
+        .bet-verdict.won { background:rgba(16,185,129,0.15); color:var(--win); }
+        .bet-verdict.lost { background:rgba(239,68,68,0.15); color:var(--loss); }
 
         /* === Responsive === */
         @media(max-width:768px) {
@@ -348,10 +368,11 @@ async function loadGameweek(gw) {
             accaLegs.innerHTML = '';
             data.acca.forEach(leg => {
                 accaLegs.innerHTML += `
-                    <div class="acca-leg">
+                    <div class="acca-leg${leg.won === true ? ' won' : leg.won === false ? ' lost' : ''}">
                         <div class="acca-match">${leg.match}</div>
                         <div class="acca-pick">${leg.pick}</div>
                         <div class="acca-reason">${leg.reason}</div>
+                        ${leg.won !== null && leg.won !== undefined ? `<div class="acca-verdict ${leg.won ? 'won' : 'lost'}">${leg.won ? '✓ WON' : '✗ LOST'}</div>` : ''}
                     </div>
                 `;
             });
@@ -366,10 +387,11 @@ async function loadGameweek(gw) {
             cornerAccaLegs.innerHTML = '';
             data.corner_acca.forEach(leg => {
                 cornerAccaLegs.innerHTML += `
-                    <div class="acca-leg" style="border-color: rgba(94, 234, 212, 0.1);">
+                    <div class="acca-leg${leg.won === true ? ' won' : leg.won === false ? ' lost' : ''}" style="border-color: rgba(94, 234, 212, 0.1);">
                         <div class="acca-match">${leg.match}</div>
                         <div class="acca-pick" style="color: var(--epl-cyan);">${leg.pick}</div>
                         <div class="acca-reason">${leg.reason}</div>
+                        ${leg.won !== null && leg.won !== undefined ? `<div class="acca-verdict ${leg.won ? 'won' : 'lost'}">${leg.won ? '✓ WON' : '✗ LOST'}</div>` : ''}
                     </div>
                 `;
             });
@@ -397,19 +419,36 @@ function fmtDate(iso) {
     return d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
 }
 
+function betTag(label, won) {
+    if (won === null || won === undefined) {
+        return `<span style="position:absolute; top:0; right:0; background:rgba(0,255,135,0.1); color:var(--epl-green); padding:2px 6px; border-radius:4px; font-size:0.65rem; font-weight:700;">TIP: ${label}</span>`;
+    }
+    return `<span class="bet-verdict ${won ? 'won' : 'lost'}" style="position:absolute; top:0; right:0;">${label} ${won ? '✓' : '✗'}</span>`;
+}
+
 function createCard(f) {
     const g = f.goals;
     const c = f.corners;
+    const concluded = !!f.actual;
     const maxProb = Math.max(g.win_prob, g.draw_prob, g.loss_prob);
     let verdictText, verdictClass;
     if (g.win_prob === maxProb) { verdictText = `${f.home_team} favoured`; verdictClass = 'home'; }
     else if (g.loss_prob === maxProb) { verdictText = `${f.away_team} favoured`; verdictClass = 'away'; }
     else { verdictText = 'Tight match — draw likely'; verdictClass = 'draw'; }
 
+    const ftBanner = concluded ? `
+        <div class="ft-banner">
+            <span class="ft-tag">FULL TIME</span>
+            <span class="ft-score">${f.home_team} ${f.actual.home_score}–${f.actual.away_score} ${f.away_team}</span>
+            ${f.actual.corners !== null && f.actual.corners !== undefined ? `<span class="ft-tag">${f.actual.corners} corners</span>` : ''}
+        </div>
+    ` : '';
+
     const card = document.createElement('div');
-    card.className = 'card';
+    card.className = 'card' + (concluded ? ' concluded' : '');
     card.innerHTML = `
         <div class="match-date">${fmtDate(f.date)}</div>
+        ${ftBanner}
         <div class="teams">
             <div class="team">
                 <div class="team-name">${f.home_team}</div>
@@ -438,13 +477,13 @@ function createCard(f) {
             <div class="stat" style="position:relative;">
                 <span class="stat-label">Likely Score</span>
                 <span class="stat-value score-val">${g.most_likely_score}</span>
-                ${g.recommended_bet ? `<span style="position:absolute; top:0; right:0; background:rgba(0,255,135,0.1); color:var(--epl-green); padding:2px 6px; border-radius:4px; font-size:0.65rem; font-weight:700;">TIP: ${g.recommended_bet}</span>` : ''}
+                ${g.recommended_bet ? betTag(g.recommended_bet, g.bet_won) : ''}
                 <span class="stat-sub">BTTS ${g.btts_prob}% · O2.5 ${g.over_2_5_prob}%</span>
             </div>
             <div class="stat" style="position:relative;">
                 <span class="stat-label">Corners</span>
                 <span class="stat-value">${c.total_expected}</span>
-                ${c.recommended_bet ? `<span style="position:absolute; top:0; right:0; background:rgba(0,255,135,0.1); color:var(--epl-green); padding:2px 6px; border-radius:4px; font-size:0.65rem; font-weight:700;">TIP: ${c.recommended_bet}</span>` : ''}
+                ${c.recommended_bet ? betTag(c.recommended_bet, c.bet_won) : ''}
                 <span class="stat-sub">O8.5 ${c.over_8_5_prob}% · O9.5 ${c.over_9_5_prob}%</span>
             </div>
         </div>

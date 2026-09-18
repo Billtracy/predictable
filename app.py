@@ -70,6 +70,48 @@ def epl_gameweeks():
     })
 
 
+def _parse_line_bet(bet_label):
+    """Parse 'Over 2.5' / 'Under 11.5' into (direction, line)."""
+    if not bet_label:
+        return None, None
+    parts = bet_label.split()
+    if len(parts) != 2:
+        return None, None
+    direction, line = parts[0].lower(), float(parts[1])
+    return direction, line
+
+
+def _bet_won(bet_label, actual_total):
+    """Did the recommended over/under bet win against the actual total?"""
+    if actual_total is None:
+        return None
+    direction, line = _parse_line_bet(bet_label)
+    if direction is None:
+        return None
+    return (actual_total > line) if direction == 'over' else (actual_total < line)
+
+
+def _grade_acca_leg(leg, fixtures_by_id):
+    """Grade a 3-word acca pick like 'Over 1.5 Goals' against the fixture's actual result."""
+    fx = fixtures_by_id.get(leg.get('match_id'))
+    if not fx or 'actual' not in fx:
+        return None
+    parts = leg['pick'].split()
+    if len(parts) != 3:
+        return None
+    direction, category = parts[0].lower(), parts[2].lower()
+    line = float(parts[1])
+    if category == 'goals':
+        total = fx['actual']['home_score'] + fx['actual']['away_score']
+    elif category == 'corners':
+        total = fx['actual']['corners']
+    else:
+        return None
+    if total is None:
+        return None
+    return (total > line) if direction == 'over' else (total < line)
+
+
 @app.route('/api/epl/gameweek/<int:gw>')
 def epl_gameweek_predictions(gw):
     """Return predictions for every fixture in a gameweek."""
@@ -92,6 +134,18 @@ def epl_gameweek_predictions(gw):
             LIMIT ? OFFSET ?
         ''', (EPL_COMPETITION, EPL_MATCHES_PER_GW, offset))
         matches = cur.fetchall()
+
+        finished_ids = [m['id'] for m in matches if m['status'] in ('FT', 'AET', 'PEN')]
+        corners_by_match = {}
+        if finished_ids:
+            placeholders = ','.join('?' for _ in finished_ids)
+            cur.execute(f'''
+                SELECT match_id, SUM(corners) AS c
+                FROM match_stats
+                WHERE match_id IN ({placeholders})
+                GROUP BY match_id
+            ''', finished_ids)
+            corners_by_match = {row['match_id']: row['c'] for row in cur.fetchall()}
 
     if not matches:
         return jsonify({'success': False, 'error': 'No fixtures for this gameweek.'})
@@ -161,12 +215,19 @@ def epl_gameweek_predictions(gw):
             },
         }
 
-        # Include actual result if match is finished
+        # Include actual result + bet grading if match is finished
         if match['status'] in ('FT', 'AET', 'PEN'):
+            hs, as_ = match['home_score'], match['away_score']
+            total_goals = hs + as_
+            actual_corners = corners_by_match.get(match['id'])
+
             fixture['actual'] = {
-                'home_score': match['home_score'],
-                'away_score': match['away_score'],
+                'home_score': hs,
+                'away_score': as_,
+                'corners': actual_corners,
             }
+            fixture['goals']['bet_won'] = _bet_won(rec_goal_bet, total_goals)
+            fixture['corners']['bet_won'] = _bet_won(rec_bet, actual_corners)
 
         fixtures.append(fixture)
 
@@ -177,6 +238,7 @@ def epl_gameweek_predictions(gw):
         if over_goal_cands:
             best_goal_over = max(over_goal_cands, key=lambda f: f['goals']['home_xg'] + f['goals']['away_xg'])
             acc_legs.append({
+                'match_id': best_goal_over['match_id'],
                 'match': f"{best_goal_over['home_team']} vs {best_goal_over['away_team']}",
                 'pick': "Over 1.5 Goals",
                 'reason': f"Highest xG ({round(best_goal_over['goals']['home_xg'] + best_goal_over['goals']['away_xg'], 2)})"
@@ -187,6 +249,7 @@ def epl_gameweek_predictions(gw):
         if over_corner_cands:
             best_corner_over = max(over_corner_cands, key=lambda f: f['corners']['total_expected'])
             acc_legs.append({
+                'match_id': best_corner_over['match_id'],
                 'match': f"{best_corner_over['home_team']} vs {best_corner_over['away_team']}",
                 'pick': "Over 6.5 Corners",
                 'reason': f"High Expected Corners ({best_corner_over['corners']['total_expected']})"
@@ -197,6 +260,7 @@ def epl_gameweek_predictions(gw):
         if under_corner_cands:
             best_corner_under = min(under_corner_cands, key=lambda f: f['corners']['total_expected'])
             acc_legs.append({
+                'match_id': best_corner_under['match_id'],
                 'match': f"{best_corner_under['home_team']} vs {best_corner_under['away_team']}",
                 'pick': "Under 13.5 Corners",
                 'reason': f"Low Expected Corners ({best_corner_under['corners']['total_expected']})"
@@ -210,6 +274,7 @@ def epl_gameweek_predictions(gw):
             if under_goal_cands:
                 best_goal_under = min(under_goal_cands, key=lambda f: f['goals']['home_xg'] + f['goals']['away_xg'])
                 acc_legs.append({
+                    'match_id': best_goal_under['match_id'],
                     'match': f"{best_goal_under['home_team']} vs {best_goal_under['away_team']}",
                     'pick': "Under 4.5 Goals",
                     'reason': f"Lowest xG ({round(best_goal_under['goals']['home_xg'] + best_goal_under['goals']['away_xg'], 2)})"
@@ -223,6 +288,7 @@ def epl_gameweek_predictions(gw):
             if under_c_cands2:
                 best_c2 = min(under_c_cands2, key=lambda f: f['corners']['total_expected'])
                 acc_legs.append({
+                    'match_id': best_c2['match_id'],
                     'match': f"{best_c2['home_team']} vs {best_c2['away_team']}",
                     'pick': "Under 12.5 Corners",
                     'reason': f"Low Expected Corners ({best_c2['corners']['total_expected']})"
@@ -239,6 +305,7 @@ def epl_gameweek_predictions(gw):
         if len(sorted_by_corners) > 0:
             c_under1 = sorted_by_corners[0]
             corner_acca_legs.append({
+                'match_id': c_under1['match_id'],
                 'match': f"{c_under1['home_team']} vs {c_under1['away_team']}",
                 'pick': "Under 12.5 Corners",
                 'reason': f"Lowest Expected Corners ({c_under1['corners']['total_expected']})"
@@ -248,6 +315,7 @@ def epl_gameweek_predictions(gw):
         if len(sorted_by_corners) > 1:
             c_under2 = sorted_by_corners[1]
             corner_acca_legs.append({
+                'match_id': c_under2['match_id'],
                 'match': f"{c_under2['home_team']} vs {c_under2['away_team']}",
                 'pick': "Under 12.5 Corners",
                 'reason': f"Low Expected Corners ({c_under2['corners']['total_expected']})"
@@ -257,10 +325,15 @@ def epl_gameweek_predictions(gw):
         if len(sorted_by_corners) > 2:
             c_over = sorted_by_corners[-1]
             corner_acca_legs.append({
+                'match_id': c_over['match_id'],
                 'match': f"{c_over['home_team']} vs {c_over['away_team']}",
                 'pick': "Over 7.5 Corners",
                 'reason': f"Highest Expected Corners ({c_over['corners']['total_expected']})"
             })
+
+    fixtures_by_id = {f['match_id']: f for f in fixtures}
+    for leg in acca + corner_acca_legs:
+        leg['won'] = _grade_acca_leg(leg, fixtures_by_id)
 
     return jsonify({'success': True, 'gameweek': gw, 'fixtures': fixtures, 'acca': acca, 'corner_acca': corner_acca_legs})
 
