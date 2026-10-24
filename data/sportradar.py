@@ -512,7 +512,13 @@ def ingest_sportradar_schedule(competition_name):
             home_comp, away_comp = get_competitors(event)
             if not home_comp or not away_comp:
                 continue
-            
+
+            # Postponed/cancelled events get re-issued under a new event ID when
+            # rescheduled; drop any stale row so it isn't shown as an upcoming fixture.
+            if status.get("status") in ("postponed", "cancelled", "abandoned"):
+                db.execute("DELETE FROM matches WHERE sportradar_id = ?", (event.get("id", ""),))
+                continue
+
             # Resolve or create teams
             for comp in [home_comp, away_comp]:
                 name = comp.get("name", "Unknown")
