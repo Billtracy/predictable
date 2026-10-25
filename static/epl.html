@@ -96,7 +96,27 @@
 
         /* === Container === */
         .container { max-width:1100px; margin:0 auto; padding:2rem; }
-        .section-title { font-size:1.4rem; font-weight:700; margin-bottom:1.5rem; display:flex; align-items:center; gap:.6rem; }
+        .section-head { display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap; margin-bottom:1.5rem; }
+        .section-title { font-size:1.4rem; font-weight:700; display:flex; align-items:center; gap:.6rem; }
+
+        /* === Export menu === */
+        .export { position:relative; }
+        .export-btn { background:var(--surface); border:1px solid var(--border); color:var(--text);
+            padding:.5rem 1rem; border-radius:8px; cursor:pointer; font-size:.85rem; font-weight:600;
+            font-family:inherit; transition:all .2s; }
+        .export-btn:hover { border-color:var(--epl-green); color:var(--epl-green); }
+        .export-menu { position:absolute; right:0; top:calc(100% + .4rem); z-index:10; min-width:200px;
+            background:#12121e; border:1px solid var(--border-hover); border-radius:10px; padding:.35rem;
+            box-shadow:0 12px 32px rgba(0,0,0,.5); display:none; }
+        .export-menu.open { display:block; }
+        .export-menu button { display:block; width:100%; text-align:left; background:none; border:none;
+            color:var(--text); padding:.55rem .75rem; border-radius:6px; cursor:pointer; font-size:.85rem; font-family:inherit; }
+        .export-menu button:hover { background:var(--surface-hover); color:var(--epl-green); }
+        .export-menu small { display:block; color:var(--text-dim); font-size:.7rem; }
+        .export-group { font-size:.65rem; font-weight:700; letter-spacing:1px; text-transform:uppercase;
+            color:var(--text-dim); padding:.6rem .75rem .25rem; }
+        .export-group:not(:first-child) { border-top:1px solid var(--border); margin-top:.3rem; }
+        .export-btn:disabled { opacity:.6; cursor:progress; }
 
         /* === Match Cards Grid === */
         .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:1.5rem; }
@@ -264,7 +284,22 @@
         Loading predictions…
     </div>
     <div id="content" style="display:none">
-        <div class="section-title" id="sectionTitle">⚽ Gameweek 1 Predictions</div>
+        <div class="section-head">
+            <div class="section-title" id="sectionTitle">⚽ Gameweek 1 Predictions</div>
+            <div class="export" id="export">
+                <button class="export-btn" id="exportBtn" onclick="toggleExportMenu(event)">⬇ Export</button>
+                <div class="export-menu" id="exportMenu">
+                    <div class="export-group" id="exportCurrentLabel">This gameweek</div>
+                    <button onclick="runExport('current', 'word')">Word document<small>.doc, with tables</small></button>
+                    <button onclick="runExport('current', 'pdf')">PDF<small>via print dialog, choose "Save as PDF"</small></button>
+                    <button onclick="runExport('current', 'csv')">Spreadsheet<small>.csv, one row per fixture</small></button>
+                    <div class="export-group">All played gameweeks</div>
+                    <button onclick="runExport('played', 'word')">Word document<small>results, outcomes &amp; tip record</small></button>
+                    <button onclick="runExport('played', 'pdf')">PDF<small>via print dialog, choose "Save as PDF"</small></button>
+                    <button onclick="runExport('played', 'csv')">Spreadsheet<small>.csv, every played fixture</small></button>
+                </div>
+            </div>
+        </div>
         
         <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem;">
             <div id="accaBanner" class="acca-banner" style="display:none; margin-bottom: 0; flex: 1 1 calc(50% - 0.5rem); min-width: 300px;">
@@ -489,6 +524,297 @@ function createCard(f) {
         </div>
     `;
     return card;
+}
+
+// === Export ===
+function toggleExportMenu(e) {
+    e.stopPropagation();
+    $('exportCurrentLabel').textContent = `This gameweek (GW ${currentGW})`;
+    $('exportMenu').classList.toggle('open');
+}
+document.addEventListener('click', () => $('exportMenu').classList.remove('open'));
+
+function esc(v) {
+    return String(v ?? '').replace(/[&<>"]/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[ch]));
+}
+
+function betResult(won) {
+    return won === true ? 'Won' : won === false ? 'Lost' : '';
+}
+
+function yesNo(b) {
+    return b ? 'Yes' : 'No';
+}
+
+function downloadBlob(content, type, filename) {
+    const url = URL.createObjectURL(new Blob([content], { type }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+async function fetchGameweek(gw) {
+    if (!gwData[gw]) {
+        const r = await fetch(`/api/epl/gameweek/${gw}`);
+        const data = await r.json();
+        if (data.success) gwData[gw] = data;
+    }
+    return gwData[gw];
+}
+
+// Every gameweek up to the current one that has at least one finished fixture,
+// trimmed to its finished fixtures. Fetched a few at a time to spare the server.
+async function fetchPlayedGameweeks(onProgress) {
+    const gws = Array.from({ length: currentGW }, (_, i) => i + 1);
+    let done = 0;
+    const queue = [...gws];
+    const worker = async () => {
+        while (queue.length) {
+            await fetchGameweek(queue.shift());
+            onProgress(++done, gws.length);
+        }
+    };
+    await Promise.all([worker(), worker(), worker()]);
+    return gws
+        .map(gw => ({ gw, data: gwData[gw] }))
+        .filter(({ data }) => data && data.fixtures.some(f => f.actual))
+        .map(({ gw, data }) => ({
+            gw,
+            fixtures: data.fixtures.filter(f => f.actual),
+            acca: data.acca || [],
+            corner_acca: data.corner_acca || [],
+        }));
+}
+
+function outcomeOf(f) {
+    const { home_score: h, away_score: a } = f.actual;
+    return h > a ? 'Home win' : h < a ? 'Away win' : 'Draw';
+}
+
+function modelPickOf(f) {
+    const g = f.goals;
+    const max = Math.max(g.win_prob, g.draw_prob, g.loss_prob);
+    return g.win_prob === max ? 'Home win' : g.loss_prob === max ? 'Away win' : 'Draw';
+}
+
+// One flat row per fixture, shared by every export format
+function fixtureRow(gw, f) {
+    const played = !!f.actual;
+    const goals = played ? f.actual.home_score + f.actual.away_score : null;
+    return {
+        'GW': gw,
+        'Date': fmtDate(f.date),
+        'Home': f.home_team,
+        'Away': f.away_team,
+        'Home xG': f.goals.home_xg.toFixed(2),
+        'Away xG': f.goals.away_xg.toFixed(2),
+        'Home %': f.goals.win_prob,
+        'Draw %': f.goals.draw_prob,
+        'Away %': f.goals.loss_prob,
+        'Model Pick': modelPickOf(f),
+        'Likely Score': f.goals.most_likely_score,
+        'BTTS %': f.goals.btts_prob,
+        'O2.5 %': f.goals.over_2_5_prob,
+        'Goal Tip': f.goals.recommended_bet,
+        'Exp Corners': f.corners.total_expected,
+        'O8.5 Corners %': f.corners.over_8_5_prob,
+        'O9.5 Corners %': f.corners.over_9_5_prob,
+        'Corner Tip': f.corners.recommended_bet,
+        // Eventual outcomes (blank until the match is played)
+        'Final Score': played ? `${f.actual.home_score}–${f.actual.away_score}` : '',
+        'Outcome': played ? outcomeOf(f) : '',
+        'Model Pick Result': played ? betResult(outcomeOf(f) === modelPickOf(f)) : '',
+        'Total Goals': played ? goals : '',
+        'BTTS Landed': played ? yesNo(f.actual.home_score > 0 && f.actual.away_score > 0) : '',
+        'O2.5 Landed': played ? yesNo(goals > 2.5) : '',
+        'Goal Tip Result': betResult(f.goals.bet_won),
+        'Actual Corners': f.actual?.corners ?? '',
+        'Corner Tip Result': betResult(f.corners.bet_won),
+    };
+}
+
+function exportRows(sets) {
+    return sets.flatMap(s => s.fixtures.map(f => fixtureRow(s.gw, f)));
+}
+
+function resultSpan(text) {
+    if (text === 'Won') return '<span class="won">✓ Won</span>';
+    if (text === 'Lost') return '<span class="lost">✗ Lost</span>';
+    return esc(text);
+}
+
+function record(results) {
+    const graded = results.filter(r => r === 'Won' || r === 'Lost');
+    if (!graded.length) return '–';
+    const won = graded.filter(r => r === 'Won').length;
+    return `${won}/${graded.length} (${Math.round(won / graded.length * 100)}%)`;
+}
+
+function accaResult(legs) {
+    if (!legs.length || legs.some(l => l.won === null || l.won === undefined)) return '';
+    return betResult(legs.every(l => l.won));
+}
+
+function accaTableHTML(title, legs) {
+    if (!legs || legs.length === 0) return '';
+    const rows = legs.map(l => `<tr><td>${esc(l.match)}</td><td><b>${esc(l.pick)}</b></td><td>${esc(l.reason)}</td><td>${resultSpan(betResult(l.won))}</td></tr>`).join('');
+    const overall = accaResult(legs);
+    return `<h3>${esc(title)}${overall ? ` — ${resultSpan(overall)}` : ''}</h3>
+        <table><tr><th>Match</th><th>Pick</th><th>Reason</th><th>Result</th></tr>${rows}</table>`;
+}
+
+function fixturesTableHTML(rows) {
+    const body = rows.map(r => `
+        <tr>
+            <td>${esc(r['Date'])}</td>
+            <td><b>${esc(r['Home'])}</b> v <b>${esc(r['Away'])}</b></td>
+            <td>${r['Final Score'] ? `<b>${esc(r['Final Score'])}</b><br>${esc(r['Outcome'])}` : 'Not played'}</td>
+            <td>${esc(r['Home xG'])} – ${esc(r['Away xG'])}</td>
+            <td>${esc(r['Home %'])} / ${esc(r['Draw %'])} / ${esc(r['Away %'])}<br>${esc(r['Model Pick'])} ${resultSpan(r['Model Pick Result'])}</td>
+            <td>${esc(r['Likely Score'])}</td>
+            <td>${esc(r['BTTS %'])}%${r['BTTS Landed'] ? `<br>Landed: ${r['BTTS Landed']}` : ''}</td>
+            <td>${esc(r['O2.5 %'])}%${r['O2.5 Landed'] ? `<br>Landed: ${r['O2.5 Landed']}` : ''}</td>
+            <td>${esc(r['Goal Tip'])}<br>${resultSpan(r['Goal Tip Result'])}</td>
+            <td>${esc(r['Exp Corners'])}${r['Actual Corners'] !== '' ? `<br>Actual: ${esc(r['Actual Corners'])}` : ''}</td>
+            <td>${esc(r['Corner Tip'])}<br>${resultSpan(r['Corner Tip Result'])}</td>
+        </tr>`).join('');
+    return `<table>
+        <tr><th>Kick-off</th><th>Match</th><th>Final Score</th><th>xG (H–A)</th><th>Win % (H / D / A) &amp; pick</th><th>Likely Score</th><th>BTTS</th><th>O2.5</th><th>Goal Tip</th><th>Corners</th><th>Corner Tip</th></tr>
+        ${body}
+    </table>`;
+}
+
+function summaryTableHTML(sets) {
+    const line = (label, rows, accaCell, cornerAccaCell) => `<tr>
+        <td><b>${label}</b></td><td>${rows.length}</td>
+        <td>${record(rows.map(r => r['Model Pick Result']))}</td>
+        <td>${record(rows.map(r => r['Goal Tip Result']))}</td>
+        <td>${record(rows.map(r => r['Corner Tip Result']))}</td>
+        <td>${accaCell}</td>
+        <td>${cornerAccaCell}</td>
+    </tr>`;
+    const body = sets.map(s => line(`GW ${s.gw}`, exportRows([s]),
+        resultSpan(accaResult(s.acca)) || '–', resultSpan(accaResult(s.corner_acca)) || '–')).join('');
+    const total = line('Total', exportRows(sets),
+        record(sets.map(s => accaResult(s.acca))), record(sets.map(s => accaResult(s.corner_acca))));
+    return `<table>
+        <tr><th>Gameweek</th><th>Played</th><th>Model 1X2 pick</th><th>Goal tips</th><th>Corner tips</th><th>3-leg acca</th><th>Corner acca</th></tr>
+        ${body}${total}
+    </table>`;
+}
+
+// Self-contained, print-friendly HTML document used for Word and PDF exports
+function exportDocumentHTML(scope, sets, forWord) {
+    const title = scope === 'played'
+        ? `Played Gameweeks ${sets[0].gw}–${sets[sets.length - 1].gw} — Results`
+        : `Gameweek ${sets[0].gw} Predictions`;
+    const sections = sets.map(s => `
+        ${scope === 'played' ? `<h2>Gameweek ${s.gw}</h2>` : ''}
+        ${accaTableHTML('Ultimate 3-Leg Acca', s.acca)}
+        ${accaTableHTML('Optimum 3-Corner Acca', s.corner_acca)}
+        <h3>Fixtures</h3>
+        ${fixturesTableHTML(exportRows([s]))}`).join('');
+    const wordHead = forWord ? `
+        <xml><w:WordDocument><w:View>Print</w:View></w:WordDocument></xml>
+        <style>@page Section1 { size:841.9pt 595.3pt; mso-page-orientation:landscape; margin:36pt; } div.Section1 { page:Section1; }</style>` : '';
+    return `<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="utf-8">
+<title>Predictable — EPL 2026/27 ${esc(title)}</title>
+${wordHead}
+<style>
+    @page { size: landscape; margin: 12mm; }
+    body { font-family: Calibri, Arial, sans-serif; font-size: 10pt; color: #111; }
+    h1 { font-size: 18pt; margin: 0 0 4pt; }
+    h2 { font-size: 15pt; margin: 20pt 0 4pt; border-bottom: 2px solid #3d195b; padding-bottom: 2pt; }
+    h3 { font-size: 12pt; margin: 12pt 0 6pt; }
+    p.meta { color: #555; margin: 0 0 12pt; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #bbb; padding: 4pt 6pt; text-align: left; vertical-align: top; }
+    th { background: #3d195b; color: #fff; font-weight: bold; }
+    tr { page-break-inside: avoid; }
+    .won { color: #0a7d4f; font-weight: bold; }
+    .lost { color: #c0392b; font-weight: bold; }
+</style>
+</head>
+<body><div class="Section1">
+<h1>Premier League 2026/27 — ${esc(title)}</h1>
+<p class="meta">Generated by Predictable on ${esc(new Date().toLocaleString('en-GB'))} · Poisson Monte Carlo, 10,000 simulations per match</p>
+${scope === 'played' ? `<h2>Tip Record</h2>${summaryTableHTML(sets)}` : ''}
+${sections}
+</div></body>
+</html>`;
+}
+
+function exportFilename(scope, sets, ext) {
+    return scope === 'played'
+        ? `predictable-epl-gw${sets[0].gw}-${sets[sets.length - 1].gw}-results.${ext}`
+        : `predictable-epl-gw${sets[0].gw}.${ext}`;
+}
+
+function exportWord(scope, sets) {
+    // Word opens HTML saved with a .doc extension and the msword MIME type as a native document
+    downloadBlob('﻿' + exportDocumentHTML(scope, sets, true), 'application/msword', exportFilename(scope, sets, 'doc'));
+}
+
+function exportPDF(scope, sets) {
+    const frame = document.createElement('iframe');
+    frame.style.cssText = 'position:fixed; right:0; bottom:0; width:0; height:0; border:0;';
+    document.body.appendChild(frame);
+    frame.contentDocument.open();
+    frame.contentDocument.write(exportDocumentHTML(scope, sets, false));
+    frame.contentDocument.close();
+    frame.contentWindow.focus();
+    frame.contentWindow.print();
+    setTimeout(() => frame.remove(), 1000);
+}
+
+function exportCSV(scope, sets) {
+    const rows = exportRows(sets);
+    const cell = v => {
+        const s = String(v ?? '');
+        return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const headers = Object.keys(rows[0]);
+    const lines = [headers.map(cell).join(',')].concat(rows.map(r => headers.map(h => cell(r[h])).join(',')));
+    // BOM so Excel reads the en dash in scores as UTF-8
+    downloadBlob('﻿' + lines.join('\r\n'), 'text/csv;charset=utf-8', exportFilename(scope, sets, 'csv'));
+}
+
+async function runExport(scope, format) {
+    const btn = $('exportBtn');
+    $('exportMenu').classList.remove('open');
+    btn.disabled = true;
+    try {
+        let sets;
+        if (scope === 'played') {
+            sets = await fetchPlayedGameweeks((done, total) => {
+                btn.textContent = `Loading GW ${done}/${total}…`;
+            });
+        } else {
+            const data = await fetchGameweek(currentGW);
+            sets = data && data.fixtures.length
+                ? [{ gw: currentGW, fixtures: data.fixtures, acca: data.acca || [], corner_acca: data.corner_acca || [] }]
+                : [];
+        }
+        if (!sets.length) {
+            alert(scope === 'played' ? 'No gameweeks have been played yet.' : 'No fixtures to export for this gameweek.');
+            return;
+        }
+        ({ word: exportWord, pdf: exportPDF, csv: exportCSV })[format](scope, sets);
+        gtag('event', 'export', { format, scope, gameweek: currentGW });
+    } catch (e) {
+        console.error(e);
+        alert('Export failed. Please try again.');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '⬇ Export';
+    }
 }
 
 init();
