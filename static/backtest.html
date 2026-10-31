@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Predictable — Backtest Results</title>
+    <meta name="description" content="Leak-free backtest of Predictable's Premier League tips: goals, corners and accas, checked against what actually happened.">
+    <meta name="theme-color" content="#7b2bf9">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/ui.css">
+    <script src="/static/js/ui.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <style>
+        .tabs { overflow-x: auto; scrollbar-width: none; }
+        .tabs::-webkit-scrollbar { display: none; }
+        .tab { white-space: nowrap; }
+        .tiles.two { grid-template-columns: repeat(2, 1fr); }
+        .tile-value { font-size: 22px; }
+
+        /* Tip line rows: model hit rate vs backing the same line blind */
+        .line-row { padding: 12px 16px; border-top: 1px solid var(--line); }
+        .line-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 8px; }
+        .line-name { font-size: 14px; font-weight: 700; }
+        .line-name small { font-weight: 500; color: var(--ink-3); margin-left: 6px; }
+        .edge { font-size: 12px; font-weight: 700; white-space: nowrap; }
+        .edge.up { color: var(--won); }
+        .edge.down { color: var(--lost); }
+        .edge.flat { color: var(--ink-3); }
+        .bar-pair { display: grid; grid-template-columns: 56px 1fr 44px; align-items: center; gap: 4px 10px; font-size: 12px; color: var(--ink-2); }
+        .bar-pair b { font-family: 'Outfit'; font-size: 13px; color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; }
+        .bar { height: 8px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
+        .bar i { display: block; height: 100%; border-radius: 4px; }
+        .bar i.tip { background: var(--series-1); }
+        .bar i.blind { background: var(--p-draw); }
+
+        .verdict-pill { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+        .verdict-pill.up { background: var(--won-bg); color: var(--won); }
+        .verdict-pill.down { background: var(--lost-bg); color: var(--lost); }
+        .market { padding: 12px 16px; border-top: 1px solid var(--line); }
+        .market-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+        .market-name { font-size: 14px; font-weight: 700; }
+        .market-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+        .market-stats div { font-size: 11px; color: var(--ink-3); font-weight: 600; text-transform: uppercase; letter-spacing: .3px; }
+        .market-stats b { display: block; font-family: 'Outfit'; font-size: 16px; color: var(--ink); text-transform: none; letter-spacing: 0; margin-top: 2px; font-variant-numeric: tabular-nums; }
+        .market-stats small { display: block; font-size: 11px; font-weight: 500; color: var(--ink-2); text-transform: none; letter-spacing: 0; }
+        .calib { margin-top: 10px; }
+        .calib summary { cursor: pointer; font-size: 12px; font-weight: 600; color: var(--brand); list-style: none; }
+        .calib summary::-webkit-details-marker { display: none; }
+        .calib .table { margin-top: 6px; }
+
+        .seg-row { display: flex; padding: 0 16px 12px; }
+        .seg-row .choices { flex: 1; }
+        .strategy-stats { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--ink-2); padding: 0 16px 14px; }
+        .strategy-stats b { color: var(--ink); }
+
+        .acca-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border-top: 1px solid var(--line); }
+        .acca-row h3 { font-size: 14px; font-weight: 700; font-family: 'Inter'; }
+        .acca-row p { font-size: 12px; color: var(--ink-2); margin-top: 2px; }
+        .acca-rate { text-align: right; font-family: 'Outfit'; font-size: 20px; font-weight: 700; }
+        .acca-rate small { display: block; font-family: 'Inter'; font-size: 11px; font-weight: 600; color: var(--ink-3); }
+
+        .legend { display: flex; gap: 16px; padding: 0 16px; font-size: 12px; font-weight: 600; color: var(--ink-2); }
+        .legend span { display: inline-flex; align-items: center; gap: 6px; }
+        .legend i { width: 14px; height: 3px; border-radius: 2px; }
+        .chart-wrap { position: relative; height: 240px; margin: 10px 12px 4px; }
+        .gw-table { border-top: 1px solid var(--line); }
+        .gw-table summary { list-style: none; cursor: pointer; padding: 14px 16px; font-size: 14px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+        .gw-table summary::-webkit-details-marker { display: none; }
+        .gw-table summary svg { color: var(--ink-3); transition: transform .2s; }
+        .gw-table[open] summary svg { transform: rotate(180deg); }
+        .gw-table .scroll { max-height: 420px; overflow-y: auto; padding: 0 16px 16px; }
+        .gw-table th { position: sticky; top: 0; background: var(--surface); }
+        .meta-note { font-size: 12px; color: var(--ink-3); text-align: center; padding: 16px 20px 0; line-height: 1.5; }
+        @media (max-width: 380px) { .market-stats { grid-template-columns: repeat(2, 1fr); } }
+    </style>
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-YTQEC745E8"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-YTQEC745E8');
+    </script>
+</head>
+<body>
+
+<div class="app">
+    <header class="hero">
+        <div class="hero-top">
+            <a href="/" class="brand"><span class="brand-mark">P</span>Predictable</a>
+            <div class="hero-actions" data-nav="top"></div>
+        </div>
+        <h1>Backtest Results</h1>
+        <p class="hero-sub">Every tip re-made using only data available before kick-off, then checked against what actually happened.</p>
+        <div class="season-pill">Leak-free <b>Premier League</b></div>
+    </header>
+
+    <div class="tabs" role="tablist" id="seasonTabs" aria-label="Season"></div>
+
+    <main class="panel panel-top" id="content">
+        <div class="card"><div style="padding:20px 16px; display:grid; gap:12px"><div class="skel" style="height:60px"></div><div class="skel" style="height:60px"></div></div></div>
+    </main>
+
+    <p class="meta-note" id="metaNote"></p>
+    <footer>Predictable AI · Poisson engine with leak-free cross-season priors</footer>
+</div>
+
+<nav class="bottom-nav" aria-label="Main" data-nav="bottom"></nav>
+
+<script>
+const $ = id => document.getElementById(id);
+let data = null;
+let view = 'all';          // 'all' = completed seasons combined, else a season key
+let cornerStrategy = null; // strategy shown in the corner tips card
+let chart = null;
+
+const CHEVRON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
+
+// epl_2024 -> 2024/25
+function seasonName(key) {
+    const y = parseInt(key.split('_')[1], 10);
+    return `${y}/${String(y + 1).slice(2)}`;
+}
+
+function currentSeason() {
+    return Object.keys(data.meta.seasons).find(k => !data.meta.competitions.includes(k));
+}
+
+// The block of results for the selected view, in one shape
+function block() {
+    if (view === 'all') {
+        return { matches: data.meta.matches, strategies: data.strategies, accas: data.meta.accas,
+                 goal_tips: data.meta.goal_tips, goal_markets: data.meta.goal_markets, gameweeks: null };
+    }
+    return data.meta.seasons[view];
+}
+
+async function init() {
+    try {
+        const r = await fetch('/api/backtest');
+        data = await r.json();
+        if (!data.success) throw new Error(data.error);
+    } catch (e) {
+        $('content').innerHTML = `<div class="card">${emptyState('No backtest results yet', 'Run experiments/corner_strategy_compare.py to generate them.')}</div>`;
+        console.error(e);
+        return;
+    }
+    cornerStrategy = data.default_corner_strategy;
+    const hash = location.hash.slice(1);
+    if (hash && data.meta.seasons[hash]) view = hash;
+    renderTabs();
+    render();
+    const when = new Date(data.meta.generated_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+    $('metaNote').textContent = `Results generated ${when}. Gameweeks are blocks of 10 matches in date order.`;
+}
+
+function renderTabs() {
+    const live = currentSeason();
+    const tabs = [['all', 'Both seasons']]
+        .concat(data.meta.competitions.map(k => [k, seasonName(k)]))
+        .concat(live ? [[live, seasonName(live)]] : []);
+    $('seasonTabs').innerHTML = tabs.map(([key, label]) =>
+        `<button class="tab" role="tab" aria-selected="${key === view}" onclick="setView('${key}')">${label}</button>`).join('');
+}
+
+function setView(key) {
+    view = key;
+    history.replaceState(null, '', key === 'all' ? location.pathname : '#' + key);
+    renderTabs();
+    render();
+}
+
+function emptyState(title, text) {
+    return `<div class="empty"><strong>${esc(title)}</strong>${esc(text)}</div>`;
+}
+
+const pct = x => `${Number(x).toFixed(1)}%`;
+
+// Below this many tips a line's gap to blind is mostly noise, so it isn't coloured as a verdict
+const MIN_SAMPLE = 30;
+
+function edgeText(diff, bets) {
+    const small = bets < MIN_SAMPLE;
+    const cls = small ? 'flat' : diff >= 1 ? 'up' : diff <= -1 ? 'down' : 'flat';
+    const sign = diff > 0 ? '+' : '';
+    return `<span class="edge ${cls}">${sign}${diff.toFixed(1)} pts vs blind${small ? ' · small sample' : ''}</span>`;
+}
+
+// Hit rate you'd get backing the same lines blind, in the same mix as the tips
+function blindRate(byPick) {
+    const picks = Object.values(byPick);
+    const bets = picks.reduce((n, p) => n + p.bets, 0);
+    return bets ? picks.reduce((s, p) => s + p.bets * p.base_rate, 0) / bets : 0;
+}
+
+function lineRows(byPick) {
+    return Object.entries(byPick).sort((a, b) => b[1].bets - a[1].bets).map(([pick, p]) => `
+        <div class="line-row">
+            <div class="line-top">
+                <span class="line-name">${esc(pick)}<small>${p.wins}/${p.bets} tips</small></span>
+                ${edgeText(p.hit_rate - p.base_rate, p.bets)}
+            </div>
+            <div class="bar-pair">
+                <span>Tip</span><div class="bar"><i class="tip" style="width:${p.hit_rate}%"></i></div><b>${pct(p.hit_rate)}</b>
+                <span>Blind</span><div class="bar"><i class="blind" style="width:${p.base_rate}%"></i></div><b>${pct(p.base_rate)}</b>
+            </div>
+        </div>`).join('');
+}
+
+function render() {
+    if (chart) { chart.destroy(); chart = null; }
+    const b = block();
+    if (!b || !b.goal_tips) {
+        $('content').innerHTML = `<div class="card">${emptyState('Results are out of date', 'Re-run experiments/corner_strategy_compare.py to add goals and gameweek results.')}</div>`;
+        return;
+    }
+    const corner = b.strategies[cornerStrategy];
+    const gt = b.goal_tips;
+    const goalBlind = blindRate(gt.by_pick), cornerBlind = blindRate(corner.by_pick);
+    const scope = view === 'all' ? `${data.meta.competitions.map(seasonName).join(' and ')} combined` : `${seasonName(view)}${view === currentSeason() ? ', played so far' : ''}`;
+
+    $('content').innerHTML = `
+        <div class="card">
+            <div class="card-head"><h2>Headline</h2><span class="badge">${b.matches} matches</span></div>
+            <div class="card-sub">${esc(scope)}. Each tip's hit rate sits next to what backing the same lines blind, on every match, would have scored. The gap is the model's real contribution.</div>
+            <div class="card-body">
+                <div class="tiles two">
+                    <div class="tile"><div class="tile-label">Goals tips</div><div class="tile-value">${pct(gt.hit_rate)}</div><div class="tile-sub">Blind ${pct(goalBlind)} · ${gt.wins}/${gt.bets}</div></div>
+                    <div class="tile"><div class="tile-label">Corner tips</div><div class="tile-value">${pct(corner.hit_rate)}</div><div class="tile-sub">Blind ${pct(cornerBlind)} · ${corner.wins}/${corner.bets}</div></div>
+                    <div class="tile"><div class="tile-label">3-leg acca</div><div class="tile-value">${pct(b.accas.ultimate.win_rate)}</div><div class="tile-sub">Won ${b.accas.ultimate.won} of ${b.accas.ultimate.accas}</div></div>
+                    <div class="tile"><div class="tile-label">Corner acca</div><div class="tile-value">${pct(b.accas.corner.win_rate)}</div><div class="tile-sub">Won ${b.accas.corner.won} of ${b.accas.corner.accas}</div></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head"><h2>Goals tips</h2></div>
+            <div class="card-sub">The line tipped on each match, chosen from total expected goals.</div>
+            ${lineRows(gt.by_pick)}
+        </div>
+
+        <div class="card">
+            <div class="card-head"><h2>Goal markets</h2></div>
+            <div class="card-sub">The model's yes/no call (yes when it rates a market 50%+) against always picking the more common answer. Brier scores how good the probabilities are: lower is better.</div>
+            ${goalMarketsHTML(b.goal_markets)}
+        </div>
+
+        <div class="card">
+            <div class="card-head"><h2>Corner tips</h2></div>
+            <div class="seg-row"><div class="choices" role="radiogroup" aria-label="Corner tip strategy">
+                ${Object.entries(data.corner_strategies).map(([key, label]) =>
+                    `<button class="choice" role="radio" aria-checked="${key === cornerStrategy}" onclick="setCornerStrategy('${key}')">${esc(label)}${key === data.default_corner_strategy ? ' (live)' : ''}</button>`).join('')}
+            </div></div>
+            <div class="strategy-stats">
+                <span>Perfect gameweeks <b>${corner.perfect_gws}/${corner.gameweeks}</b></span>
+                <span>Gameweeks at 80%+ <b>${corner.gws_80_plus}</b></span>
+                <span>Worst gameweek <b>${pct(corner.worst_gw_rate)}</b></span>
+            </div>
+            ${lineRows(corner.by_pick)}
+        </div>
+
+        <div class="card">
+            <div class="card-head"><h2>Accas</h2></div>
+            <div class="card-sub">One of each per gameweek, built exactly as on the predictions page. Only full three-leg accas count.</div>
+            ${accaRow('Ultimate 3-leg acca', 'Goals and corner lines', b.accas.ultimate)}
+            ${accaRow('3-corner acca', 'Corner lines only', b.accas.corner)}
+        </div>
+
+        ${b.gameweeks ? gameweeksHTML(b.gameweeks) : `
+        <div class="card">${emptyState('Gameweek by gameweek', 'Choose a single season above to see how each gameweek went.')}</div>`}
+    `;
+    if (b.gameweeks) drawChart(b.gameweeks);
+}
+
+function setCornerStrategy(key) {
+    cornerStrategy = key;
+    const y = window.scrollY;
+    render();
+    window.scrollTo(0, y);
+}
+
+function goalMarketsHTML(markets) {
+    const rows = ['btts', 'o15', 'o25'].filter(k => markets[k]).map(k => {
+        const m = markets[k];
+        const better = m.brier < m.baseline_brier;
+        return `
+        <div class="market">
+            <div class="market-top">
+                <span class="market-name">${esc(m.label)}</span>
+                <span class="verdict-pill ${better ? 'up' : 'down'}">${better ? 'Beats blind' : 'No edge over blind'}</span>
+            </div>
+            <div class="market-stats">
+                <div>Calls right<b>${pct(m.accuracy)}</b><small>Always-majority ${pct(m.baseline_accuracy)}</small></div>
+                <div>Happened<b>${pct(m.actual_rate)}</b><small>Model avg ${pct(m.avg_predicted)}</small></div>
+                <div>Brier<b>${m.brier.toFixed(3)}</b><small>Blind ${m.baseline_brier.toFixed(3)}</small></div>
+            </div>
+            <details class="calib">
+                <summary>Calibration: when the model said X%, how often did it happen?</summary>
+                <table class="table">
+                    <thead><tr><th class="left">Model said</th><th>Matches</th><th>Avg said</th><th>Happened</th></tr></thead>
+                    <tbody>${m.calibration.map(c => `<tr><td class="left">${esc(c.range)}</td><td>${c.matches}</td><td>${pct(c.predicted)}</td><td>${pct(c.actual)}</td></tr>`).join('')}</tbody>
+                </table>
+            </details>
+        </div>`;
+    }).join('');
+    const o = markets.outcome;
+    return rows + (o ? `
+        <div class="market">
+            <div class="market-top">
+                <span class="market-name">Match result</span>
+                <span class="badge">${pct(o.accuracy)} favourites won</span>
+            </div>
+        </div>` : '');
+}
+
+function accaRow(title, sub, a) {
+    return `
+        <div class="acca-row">
+            <div><h3>${esc(title)}</h3><p>${esc(sub)} · legs landed ${a.legs_won}/${a.legs} (${pct(a.leg_hit_rate)})</p></div>
+            <div class="acca-rate">${a.won}/${a.accas}<small>${pct(a.win_rate)} won</small></div>
+        </div>`;
+}
+
+function gameweeksHTML(gws) {
+    const acca = v => v === true ? '<span class="won">✓ Won</span>' : v === false ? '<span class="lost">✗ Lost</span>' : '–';
+    const rate = ([w, n]) => n ? `${w}/${n}` : '–';
+    return `
+        <div class="card">
+            <div class="card-head"><h2>Gameweek by gameweek</h2></div>
+            <div class="card-sub">Share of each gameweek's tips that landed.</div>
+            <div class="legend" aria-hidden="true">
+                <span><i style="background:var(--series-1)"></i>Goals tips</span>
+                <span><i style="background:var(--series-2)"></i>Corner tips</span>
+            </div>
+            <div class="chart-wrap"><canvas id="gwChart" role="img" aria-label="Goals and corner tip hit rate for each gameweek; the same figures are in the table below"></canvas></div>
+            <details class="gw-table">
+                <summary>Show as a table ${CHEVRON}</summary>
+                <div class="scroll">
+                    <table class="table">
+                        <thead><tr><th class="left">GW</th><th>Goals tips</th><th>Corner tips</th><th>3-leg acca</th><th>Corner acca</th></tr></thead>
+                        <tbody>${gws.map(g => `<tr><td class="left">${g.gw}</td><td>${rate(g.goal_tips)}</td><td>${rate(g.corner_tips)}</td><td>${acca(g.ultimate_acca)}</td><td>${acca(g.corner_acca)}</td></tr>`).join('')}</tbody>
+                    </table>
+                </div>
+            </details>
+        </div>`;
+}
+
+let lastGameweeks = null;
+function drawChart(gws) {
+    lastGameweeks = gws;
+    if (chart) chart.destroy();
+    const share = ([w, n]) => n ? Math.round(w / n * 1000) / 10 : null;
+    const s1 = themeColor('--series-1'), s2 = themeColor('--series-2');
+    const surface = themeColor('--surface'), tick = themeColor('--ink-3'), grid = themeColor('--line');
+    const series = (label, color, values) => ({
+        label, data: values, borderColor: color, backgroundColor: color, borderWidth: 2, tension: 0,
+        pointRadius: 3, pointHoverRadius: 5, pointBorderColor: surface, pointBorderWidth: 2, spanGaps: true,
+    });
+    chart = new Chart($('gwChart'), {
+        type: 'line',
+        data: {
+            labels: gws.map(g => `GW ${g.gw}`),
+            datasets: [
+                series('Goals tips', s1, gws.map(g => share(g.goal_tips))),
+                series('Corner tips', s2, gws.map(g => share(g.corner_tips))),
+            ],
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => {
+                            const g = gws[ctx.dataIndex];
+                            const [w, n] = ctx.datasetIndex === 0 ? g.goal_tips : g.corner_tips;
+                            return ` ${ctx.dataset.label}: ${ctx.parsed.y}% (${w}/${n})`;
+                        },
+                    },
+                },
+            },
+            scales: {
+                x: { grid: { display: false }, border: { display: false }, ticks: { color: tick, font: { size: 10 }, maxTicksLimit: 10, maxRotation: 0 } },
+                y: { min: 0, max: 100, grid: { color: grid }, border: { display: false }, ticks: { color: tick, font: { size: 10 }, stepSize: 25, callback: v => v + '%' } },
+            },
+        },
+    });
+}
+
+window.addEventListener('themechange', () => { if (lastGameweeks && document.getElementById('gwChart')) drawChart(lastGameweeks); });
+
+init();
+</script>
+</body>
+</html>

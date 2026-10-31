@@ -4,15 +4,15 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from db.database import get_db
-from predictors.corners import predict_corners
+from predictors.corners import predict_corners, corner_tip, DEFAULT_CORNER_STRATEGY
 
-def get_optimized_pick(expected_corners):
-    if expected_corners < 9.0:
-        return "Under 11.5", lambda actual: actual < 11.5
-    elif expected_corners < 10.0:
-        return "Over 7.5", lambda actual: actual > 7.5
-    else:
-        return "Over 8.5", lambda actual: actual > 8.5
+def get_optimized_pick(expected_corners, home_name, away_name, strategy=DEFAULT_CORNER_STRATEGY):
+    pick_name = corner_tip(strategy, expected_corners, home_name, away_name)
+    direction, line = pick_name.split()
+    line = float(line)
+    if direction == "Under":
+        return pick_name, lambda actual: actual < line
+    return pick_name, lambda actual: actual > line
 
 def run_gw2_predictions():
     print("\n--- GW 2 PREDICTIONS (epl_2026) ---")
@@ -51,7 +51,7 @@ def run_gw2_predictions():
                 continue
             
             expected = pred["results"]["total_expected"]
-            pick_name, _ = get_optimized_pick(expected)
+            pick_name, _ = get_optimized_pick(expected, match["home_name"], match["away_name"])
             print(f"{match['date'][:10]} | {match['home_name']:20} vs {match['away_name']:20} | Exp: {expected:5.2f} -> BET: {pick_name}")
             
         except Exception as e:
@@ -134,7 +134,7 @@ def run_gw_backtest():
                     continue
 
                 expected = pred["results"]["total_expected"]
-                _, eval_func = get_optimized_pick(expected)
+                _, eval_func = get_optimized_pick(expected, match["home_name"], match["away_name"])
                 
                 if eval_func(actual_total):
                     wins += 1

@@ -1,0 +1,20 @@
+# Shared nginx gateway: the only thing on the server that binds 80/443.
+# Every project joins the "proxy" network and drops <project>.conf into conf.d/.
+services:
+  gateway:
+    image: nginx:1.27-alpine
+    container_name: gateway
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./conf.d:/etc/nginx/conf.d:ro
+      - ./snippets:/etc/nginx/snippets:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    networks: [proxy]
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+networks:
+  proxy:
+    name: proxy

@@ -1,0 +1,23 @@
+services:
+  predictable:
+    build: .
+    image: predictable-app
+    container_name: predictable_app
+    restart: unless-stopped
+    env_file: .env
+    mem_limit: 1g
+    networks: [proxy]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/')"]
+      interval: 30s
+      start_period: 15s
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+# The gateway's network; its nginx reaches this container as predictable_app:8000.
+# deploy/deploy.sh sets PROXY_NETWORK for the target server.
+networks:
+  proxy:
+    external: true
+    name: ${PROXY_NETWORK:-proxy}

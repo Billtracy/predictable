@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Predictable — Champions League 2026/27 Predictions</title>
+    <meta name="description" content="Champions League 2026/27 over/under goals and corners predictions from a joint Poisson model across Europe's top leagues.">
+    <meta name="theme-color" content="#7b2bf9">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/ui.css">
+    <script src="/static/js/ui.js"></script>
+    <style>
+        /* === Matchday nav === */
+        .mw-nav { display: grid; grid-template-columns: 36px 1fr 36px; align-items: center; gap: 8px; padding: 16px 20px 12px; }
+        .mw-title { text-align: center; border-radius: 12px; padding: 4px 8px; transition: background .2s; }
+        .mw-title:hover { background: var(--surface-2); }
+        .mw-title strong { display: flex; align-items: center; justify-content: center; gap: 6px; font-family: 'Outfit'; font-size: 19px; font-weight: 700; }
+        .mw-title strong svg { transition: transform .2s; color: var(--ink-3); }
+        .mw-title[aria-expanded="true"] strong svg { transform: rotate(180deg); }
+        .mw-title span { display: block; font-size: 13px; color: var(--ink-2); margin-top: 1px; min-height: 1.2em; }
+        .mw-picker {
+            margin: 0 20px 12px; padding: 12px; background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow);
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 6px;
+        }
+        .mw-picker button { min-height: 36px; padding: 6px 8px; border-radius: 10px; font-size: 13px; font-weight: 600; color: var(--ink-2); background: var(--surface-2); position: relative; }
+        .mw-picker button:hover { color: var(--ink); background: var(--line); }
+        .mw-picker button.played { color: var(--ink-3); }
+        .mw-picker button.live::after { content: ''; position: absolute; top: 5px; right: 5px; width: 5px; height: 5px; border-radius: 50%; background: var(--brand); }
+        .mw-picker button.active { background: var(--ink); color: var(--surface); }
+
+        /* === Fixture list === */
+        .day { font-family: 'Outfit'; font-size: 15px; font-weight: 700; padding: 16px 16px 4px; }
+        .fx { border-bottom: 1px solid var(--line); margin: 0 12px; }
+        .fx:last-child { border-bottom: 0; }
+        .fx summary { list-style: none; cursor: pointer; padding: 14px 4px 12px; border-radius: 12px; outline-offset: -2px; }
+        .fx summary::-webkit-details-marker { display: none; }
+        .fx summary:hover .score { background: var(--line); }
+        .fx-row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; }
+        .side { display: flex; align-items: center; gap: 10px; min-width: 0; }
+        .side.home { justify-content: flex-end; text-align: right; }
+        .tname { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .center { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .score {
+            min-width: 64px; padding: 6px 10px; border-radius: 8px; text-align: center;
+            background: var(--surface-2); font-family: 'Outfit'; font-size: 17px; font-weight: 700;
+            font-variant-numeric: tabular-nums; transition: background .2s;
+        }
+        .score.ko { font-size: 15px; font-weight: 600; color: var(--ink-2); }
+        .status { font-size: 11px; font-weight: 600; color: var(--ink-3); letter-spacing: .3px; }
+        .status.hit { color: var(--won); }
+        .chips { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+
+        /* Expanded detail */
+        .detail { padding: 2px 4px 16px; animation: reveal .2s ease-out; }
+        @keyframes reveal { from { opacity: 0; transform: translateY(-4px); } }
+        .probs-labels { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-2); margin-bottom: 6px; }
+        .probs-labels b { color: var(--ink); font-family: 'Outfit'; font-size: 14px; margin-right: 3px; }
+        .probs-bar { display: flex; height: 6px; gap: 3px; }
+        .probs-bar i { display: block; height: 100%; border-radius: 3px; }
+        .verdict { text-align: center; font-size: 12px; color: var(--ink-2); margin-top: 8px; }
+        .verdict b { color: var(--ink); }
+        .detail .tiles { margin-top: 14px; }
+
+        /* === Ties === */
+        .tie { padding: 14px 16px; border-top: 1px solid var(--line); }
+        .tie-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 14px; font-weight: 600; }
+        .tie-row .side { flex: 1; }
+        .tie-row .side.right { justify-content: flex-end; text-align: right; }
+        .tie-pct { font-family: 'Outfit'; font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
+        .tie .probs-bar { margin-top: 10px; }
+        .tie-note { font-size: 12px; color: var(--ink-2); text-align: center; margin-top: 6px; }
+
+        /* Skeleton */
+        .skel-row { display: grid; grid-template-columns: 1fr 64px 1fr; gap: 10px; align-items: center; padding: 20px 16px; border-bottom: 1px solid var(--line); }
+        .skel-row .skel:first-child { justify-self: end; width: 70%; }
+        .skel-row .skel:nth-child(2) { height: 30px; border-radius: 8px; }
+        .skel-row .skel:last-child { width: 70%; }
+
+        /* === Model tab === */
+        .about { font-size: 13px; line-height: 1.55; color: var(--ink-2); padding: 0 16px 16px; }
+        .about + .about { margin-top: -6px; }
+        .strength { display: grid; grid-template-columns: 22px 1fr 80px 52px; align-items: center; gap: 10px; padding: 9px 16px; border-top: 1px solid var(--line); font-size: 13px; }
+        .strength .rank { color: var(--ink-3); font-variant-numeric: tabular-nums; text-align: right; }
+        .strength .who { display: flex; align-items: center; gap: 10px; min-width: 0; font-weight: 600; }
+        .strength .who span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .strength .who small { color: var(--ink-3); font-weight: 500; }
+        .strength .bar { height: 6px; border-radius: 3px; background: var(--surface-2); position: relative; overflow: hidden; }
+        .strength .bar i { position: absolute; top: 0; bottom: 0; border-radius: 3px; }
+        .strength .val { text-align: right; font-family: 'Outfit'; font-weight: 700; font-variant-numeric: tabular-nums; }
+        .more-btn { width: 100%; padding: 12px; font-size: 13px; font-weight: 600; color: var(--brand); border-top: 1px solid var(--line); }
+
+        @media (min-width: 761px) {
+            .mw-nav { padding-left: 4px; padding-right: 4px; }
+            .mw-picker { margin-left: 0; margin-right: 0; }
+            .tname { font-size: 15px; }
+        }
+        @media (max-width: 380px) {
+            .side { gap: 7px; }
+            .tname { font-size: 13px; }
+            .strength { grid-template-columns: 20px 1fr 52px 46px; gap: 8px; }
+        }
+    </style>
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-YTQEC745E8"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-YTQEC745E8');
+    </script>
+</head>
+<body>
+
+<div class="app">
+    <header class="hero">
+        <div class="hero-top">
+            <a href="/" class="brand"><span class="brand-mark">P</span>Predictable</a>
+            <div class="hero-actions" data-nav="top"></div>
+        </div>
+        <h1>Champions League</h1>
+        <div class="season-pill">UEFA Champions League <b>2026/27</b></div>
+    </header>
+
+    <div class="tabs" role="tablist">
+        <button class="tab" role="tab" id="tab-matches" aria-controls="panel-matches" aria-selected="true" onclick="showTab('matches')">Matches</button>
+        <button class="tab" role="tab" id="tab-model" aria-controls="panel-model" aria-selected="false" onclick="showTab('model')">Model</button>
+    </div>
+
+    <div id="mdSection">
+        <div class="mw-nav">
+            <button class="circle-btn" id="mdPrev" onclick="changeMD(-1)" aria-label="Previous matchday">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <button class="mw-title" id="mdTitle" aria-expanded="false" aria-controls="mdPicker" onclick="togglePicker()">
+                <strong><span id="mdName">Matchday</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></strong>
+                <span id="mdDates"></span>
+            </button>
+            <button class="circle-btn" id="mdNext" onclick="changeMD(1)" aria-label="Next matchday">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+        </div>
+        <div class="mw-picker" id="mdPicker" hidden></div>
+    </div>
+
+    <main>
+        <section class="panel" id="panel-matches" role="tabpanel" aria-labelledby="tab-matches">
+            <div class="card" id="ties" hidden></div>
+            <div class="card" id="fixtures"></div>
+        </section>
+
+        <section class="panel panel-top" id="panel-model" role="tabpanel" aria-labelledby="tab-model" hidden>
+            <div class="card">
+                <div class="card-head"><h2>Strongest clubs</h2></div>
+                <div class="card-sub">Expected goal difference per game against an average side on neutral ground, from domestic and European results.</div>
+                <div id="teamList"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-head"><h2>League strength</h2></div>
+                <div class="card-sub">A typical club from each league against an average side, in expected goal difference per game. Fitted from European meetings between leagues.</div>
+                <div id="leagueList"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-head"><h2>About the model</h2></div>
+                <p class="about">One Poisson model is fitted across the Premier League, LaLiga, Serie A, Bundesliga, Ligue 1, the Champions League and the Europa League together. Each club is rated relative to its league, and the leagues are put on one scale by the games between them. Recent results count more: a result from a year ago counts half. Clubs from other leagues are rated from their European results.</p>
+                <p class="about">Knockout ties are worked out across both legs, including extra time and penalties. Played matchdays show what the model predicted the morning before, using only results known then. Markets settle on the 90-minute score.</p>
+                <p class="about">Corners use the same structure, fitted on corner counts from Champions League and Premier League games. Each fixture gets one goals tip and one corners tip, chosen by the same rules as the Premier League page.</p>
+                <p class="about">Backtested on every game from the league phase onward, each predicted the morning before using only earlier results: the corners tip landed 77% of the time in 2025/26 and 79% in 2024/25, and the goals tip 74% and 71%. In both seasons, every corner line the model tipped landed more often than tipping that line on every game. It is a model, not a tip service.</p>
+            </div>
+        </section>
+    </main>
+
+    <footer>Predictable AI · Joint Poisson model across Europe's top leagues</footer>
+</div>
+
+<nav class="bottom-nav" aria-label="Main" data-nav="bottom"></nav>
+
+<script>
+const $ = id => document.getElementById(id);
+let matchdays = [];
+let current = 0;
+let live = 0;
+let loadToken = 0;
+const mdCache = {};
+let modelLoaded = false;
+
+// === Tabs ===
+function showTab(name) {
+    ['matches', 'model'].forEach(t => {
+        $('tab-' + t).setAttribute('aria-selected', t === name);
+        $('panel-' + t).hidden = t !== name;
+    });
+    $('mdSection').hidden = name === 'model';
+    history.replaceState(null, '', name === 'matches' ? location.pathname : '#' + name);
+    if (name === 'model' && !modelLoaded) loadModel();
+}
+
+// === Badges ===
+// Premier League clubs use their crest; everyone else gets a badge with the SR club code.
+const EPL_CRESTS = new Set(['ARS', 'AVL', 'BHA', 'BOU', 'BRE', 'BUR', 'CHE', 'CRY', 'EVE', 'FUL', 'LEE', 'LIV', 'MCI', 'MUN', 'NEW', 'NFO', 'SUN', 'TOT', 'WHU', 'WOL']);
+
+function badge(t) {
+    if (t.country === 'England' && EPL_CRESTS.has(t.code)) {
+        return `<span class="crest has-img" style="--c1:#963cff;--c2:#fff" aria-hidden="true">`
+            + `<img src="/static/img/crests/${esc(t.code)}.webp" alt="" width="28" height="28" loading="lazy" decoding="async" onerror="crestFallback(this)"></span>`;
+    }
+    let h = 0;
+    for (const ch of t.name) h = (h * 31 + ch.charCodeAt(0)) % 360;
+    return `<span class="crest" style="--c1:hsl(${h} 55% 38%);--c2:#fff" aria-hidden="true">${esc(t.code)}</span>`;
+}
+
+// SportRadar names are long ("Galatasaray Istanbul"); trim to what fits a fixture row.
+const SHORT_NAMES = {
+    'Manchester City': 'Man City', 'Manchester United': 'Man Utd', 'Paris Saint-Germain': 'PSG',
+    'Atletico Madrid': 'Atlético', 'Borussia Dortmund': 'Dortmund', 'Bayer Leverkusen': 'Leverkusen',
+    'Tottenham Hotspur': 'Spurs', 'Newcastle United': 'Newcastle', 'Racing Club De Lens': 'Lens',
+    'Olympique Marseille': 'Marseille', 'Olympique Lyon': 'Lyon', 'Eintracht Frankfurt': 'Frankfurt',
+    'Club Brugge': 'Club Brugge', 'Sporting CP': 'Sporting CP', 'Nottingham Forest': "Nott'm Forest",
+};
+function shortName(name) {
+    if (SHORT_NAMES[name]) return SHORT_NAMES[name];
+    return name.replace(/^(FC|AFC|SSC|SL|SK|SC|CF|RC|OGC) /, '')
+        .replace(/ (FC|CF|AFC|Calcio|Istanbul|Rotterdam|Turin|Milano|Piraeus|Donetsk|Bratislava|Linz|Prague|Lisbon|Zagreb|Belgrade|Copenhagen|Eindhoven|Amsterdam)$/, '')
+        .replace(/^(\S+) (\S+) (\S+).*$/, '$1 $2 $3');
+}
+
+// === Matchday nav ===
+function renderPicker() {
+    $('mdPicker').innerHTML = matchdays.map((d, i) => {
+        const cls = [i === current && 'active', i < live && 'played', i === live && 'live'].filter(Boolean).join(' ');
+        return `<button class="${cls}" onclick="togglePicker(false); loadMD(${i})">${esc(d.label)}</button>`;
+    }).join('');
+}
+
+function togglePicker(open) {
+    const picker = $('mdPicker');
+    open = open ?? picker.hidden;
+    if (open) renderPicker();
+    picker.hidden = !open;
+    $('mdTitle').setAttribute('aria-expanded', open);
+}
+
+function changeMD(delta) {
+    const next = current + delta;
+    if (next >= 0 && next < matchdays.length) loadMD(next);
+}
+
+document.addEventListener('keydown', e => {
+    if (e.target.closest('input, textarea') || !$('panel-model').hidden) return;
+    if (e.key === 'ArrowLeft') changeMD(-1);
+    if (e.key === 'ArrowRight') changeMD(1);
+    if (e.key === 'Escape') togglePicker(false);
+});
+
+function emptyState(title, text) {
+    return `<div class="empty"><strong>${esc(title)}</strong>${esc(text)}</div>`;
+}
+
+function skeleton(n = 5) {
+    return Array.from({ length: n }, () => '<div class="skel-row"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>').join('');
+}
+
+function fmtDay(iso) {
+    return new Date(iso).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }).replace(',', '');
+}
+
+function fmtTime(iso) {
+    return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+
+async function loadMD(i) {
+    const token = ++loadToken;
+    current = i;
+    const md = matchdays[i];
+    $('mdName').textContent = md.label;
+    $('mdDates').textContent = fmtDay(md.start) === fmtDay(md.end) ? fmtDay(md.start) : `${fmtDay(md.start)} – ${fmtDay(md.end)}`;
+    $('mdPrev').disabled = i <= 0;
+    $('mdNext').disabled = i >= matchdays.length - 1;
+    if (!$('mdPicker').hidden) renderPicker();
+    if (!mdCache[md.key]) { $('fixtures').innerHTML = skeleton(); $('ties').hidden = true; }
+
+    try {
+        if (!mdCache[md.key]) {
+            const r = await fetch(`/api/ucl/matchday/${encodeURIComponent(md.key)}`);
+            mdCache[md.key] = await r.json();
+        }
+        const data = mdCache[md.key];
+        if (token !== loadToken) return;
+        if (!data.success || !data.fixtures.length) {
+            $('fixtures').innerHTML = emptyState('No fixtures', 'There is nothing to predict for this matchday yet.');
+            return;
+        }
+        renderTies(data.ties);
+        renderFixtures(data.fixtures);
+    } catch (e) {
+        if (token !== loadToken) return;
+        $('fixtures').innerHTML = emptyState('Couldn\'t load predictions', 'Please try again in a moment.');
+        console.error(e);
+    }
+}
+
+// === Rendering ===
+function renderFixtures(fixtures) {
+    let html = '', lastDay = null;
+    fixtures.forEach(f => {
+        const day = fmtDay(f.date);
+        if (day !== lastDay) { html += `<div class="day">${esc(day)}</div>`; lastDay = day; }
+        html += fixtureHTML(f);
+    });
+    $('fixtures').innerHTML = html;
+}
+
+// A fixture's tip, graded ✓/✗ once played (same chip as the EPL page)
+function chip(label, bet, won) {
+    if (!bet) return '';
+    const cls = won === true ? ' won' : won === false ? ' lost' : '';
+    const mark = won === true ? ' ✓' : won === false ? ' ✗' : '';
+    return `<span class="chip${cls}">${label} <b>${esc(bet)}${mark}</b></span>`;
+}
+
+function fixtureHTML(f) {
+    const a = f.actual, h = f.home, w = f.away, g = f.goals, c = f.corners;
+    const hn = shortName(h.name), wn = shortName(w.name);
+    let scoreBox, status;
+    const max = Math.max(f.home_win, f.draw, f.away_win);
+    if (a) {
+        scoreBox = `<div class="score num">${a.home} - ${a.away}</div>`;
+        const extra = a.decided_by === 'aet' ? ` · AET ${a.home_final}-${a.away_final}` : a.decided_by === 'pen' ? ' · Pens' : '';
+        status = `<div class="status">FT${esc(extra)}</div>`;
+    } else {
+        scoreBox = `<div class="score ko num">${fmtTime(f.date)}</div>`;
+        const fav = f.home_win === max ? h.code : f.away_win === max ? w.code : 'Draw';
+        status = `<div class="status">${esc(fav)} ${max}%</div>`;
+    }
+    const verdict = f.home_win === max ? `<b>${esc(hn)}</b> favoured`
+        : f.away_win === max ? `<b>${esc(wn)}</b> favoured`
+        : '<b>Tight match</b>, draw most likely';
+    const goals = a ? a.home + a.away : null;
+    const corners = a && a.corners !== null && a.corners !== undefined ? a.corners : null;
+    const landed = (over, line, total) => total === null ? '' : `<div class="tile-sub">${total > line ? 'Landed' : 'Didn\'t land'}</div>`;
+
+    return `
+    <details class="fx">
+        <summary aria-label="${esc(hn)} v ${esc(wn)}">
+            <div class="fx-row">
+                <div class="side home"><span class="tname">${esc(hn)}</span>${badge(h)}</div>
+                <div class="center">${scoreBox}</div>
+                <div class="side away">${badge(w)}<span class="tname">${esc(wn)}</span></div>
+            </div>
+            <div class="center" style="margin-top:4px">${status}</div>
+            <div class="chips">
+                ${chip('Goals', g.tip, g.tip_won)}
+                ${chip('Corners', c.tip, c.tip_won)}
+            </div>
+        </summary>
+        <div class="detail">
+            <div class="probs-labels">
+                <span><b>${f.home_win}%</b>${esc(h.code)}</span>
+                <span><b>${f.draw}%</b>Draw</span>
+                <span><b>${f.away_win}%</b>${esc(w.code)}</span>
+            </div>
+            <div class="probs-bar">
+                <i style="width:${f.home_win}%; background:var(--p-home)"></i>
+                <i style="width:${f.draw}%; background:var(--p-draw)"></i>
+                <i style="width:${f.away_win}%; background:var(--p-away)"></i>
+            </div>
+            <div class="verdict">${verdict}</div>
+            <div class="tiles">
+                <div class="tile"><div class="tile-label">Exp. goals</div><div class="tile-value">${g.home_xg.toFixed(1)}–${g.away_xg.toFixed(1)}</div><div class="tile-sub">${goals !== null ? `Actual ${goals}` : `Total ${(g.home_xg + g.away_xg).toFixed(2)}`}</div></div>
+                <div class="tile"><div class="tile-label">Over 1.5</div><div class="tile-value">${g.over['1.5']}%</div>${landed(g.over['1.5'], 1.5, goals)}</div>
+                <div class="tile"><div class="tile-label">Over 2.5</div><div class="tile-value">${g.over['2.5']}%</div>${landed(g.over['2.5'], 2.5, goals)}</div>
+                <div class="tile"><div class="tile-label">Corners</div><div class="tile-value">${c.total}</div><div class="tile-sub">${corners !== null ? `Actual ${corners}` : `${c.home} – ${c.away}`}</div></div>
+                <div class="tile"><div class="tile-label">Corners over 8.5</div><div class="tile-value">${c.over['8.5']}%</div>${landed(c.over['8.5'], 8.5, corners)}</div>
+                <div class="tile"><div class="tile-label">Corners over 9.5</div><div class="tile-value">${c.over['9.5']}%</div>${landed(c.over['9.5'], 9.5, corners)}</div>
+            </div>
+        </div>
+    </details>`;
+}
+
+function renderTies(ties) {
+    const el = $('ties');
+    if (!ties || !ties.length) { el.hidden = true; return; }
+    el.hidden = false;
+    el.innerHTML = `
+        <div class="card-head"><h2>Who goes through</h2></div>
+        <div class="card-sub">Across both legs, including extra time and penalties.</div>
+        ${ties.map(t => {
+            const p1 = t.team1_advance, p2 = 100 - p1;
+            const note = t.winner ? `${esc(shortName((t.winner === 1 ? t.team1 : t.team2).name))} went through ${(t.winner === 1) === (p1 >= 50) ? '✓' : '✗'}`
+                : t.leg1_score ? `First leg ${t.leg1_score[0]}–${t.leg1_score[1]}` : '';
+            return `
+            <div class="tie">
+                <div class="tie-row">
+                    <div class="side">${badge(t.team1)}<span class="tname">${esc(shortName(t.team1.name))}</span></div>
+                    <span class="tie-pct">${p1}%</span>
+                    <span class="tie-pct">${p2}%</span>
+                    <div class="side right"><span class="tname">${esc(shortName(t.team2.name))}</span>${badge(t.team2)}</div>
+                </div>
+                <div class="probs-bar">
+                    <i style="width:${p1}%; background:var(--p-home)"></i>
+                    <i style="width:${p2}%; background:var(--p-away)"></i>
+                </div>
+                ${note ? `<div class="tie-note">${note}</div>` : ''}
+            </div>`;
+        }).join('')}`;
+}
+
+// === Model tab ===
+function strengthRow(rank, who, gd, scale) {
+    // Bars grow from the centre: right for positive, left for negative.
+    const w = Math.min(50, Math.abs(gd) / scale * 50);
+    const bar = gd >= 0 ? `left:50%; width:${w}%; background:var(--series-1)` : `right:50%; width:${w}%; background:var(--series-2)`;
+    return `<div class="strength"><span class="rank">${rank}</span><div class="who">${who}</div>
+        <div class="bar"><i style="${bar}"></i></div><span class="val">${gd >= 0 ? '+' : ''}${gd.toFixed(2)}</span></div>`;
+}
+
+let allTeams = [];
+function renderTeams(limit) {
+    const scale = Math.max(...allTeams.map(t => Math.abs(t.gd)));
+    $('teamList').innerHTML = allTeams.slice(0, limit).map((t, i) => strengthRow(i + 1,
+        `${badge(t)}<span>${esc(shortName(t.name))} <small>${esc(t.league)}</small></span>`, t.gd, scale)).join('')
+        + (limit < allTeams.length ? `<button class="more-btn" onclick="renderTeams(${allTeams.length})">Show all ${allTeams.length} clubs</button>` : '');
+}
+
+async function loadModel() {
+    $('teamList').innerHTML = skeleton(4);
+    $('leagueList').innerHTML = skeleton(3);
+    try {
+        const d = await (await fetch('/api/ucl/model')).json();
+        if (!d.success) throw new Error(d.error);
+        modelLoaded = true;
+        allTeams = d.teams;
+        renderTeams(12);
+        const scale = Math.max(...d.leagues.map(l => Math.abs(l.gd)));
+        $('leagueList').innerHTML = d.leagues.map((l, i) => strengthRow(i + 1, `<span>${esc(l.league)}</span>`, l.gd, scale)).join('');
+    } catch (e) {
+        $('teamList').innerHTML = emptyState('Couldn\'t load the model', 'Please try again in a moment.');
+        $('leagueList').innerHTML = '';
+        console.error(e);
+    }
+}
+
+// === Init ===
+(async function init() {
+    $('fixtures').innerHTML = skeleton();
+    try {
+        const d = await (await fetch('/api/ucl/matchdays')).json();
+        if (!d.success) { $('fixtures').innerHTML = emptyState('No data yet', d.error); return; }
+        matchdays = d.matchdays;
+        live = d.current;
+        loadMD(d.current);
+    } catch (e) {
+        $('fixtures').innerHTML = emptyState('Couldn\'t load predictions', 'Please try again in a moment.');
+        console.error(e);
+    }
+    if (location.hash === '#model') showTab('model');
+})();
+</script>
+</body>
+</html>

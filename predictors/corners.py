@@ -64,3 +64,53 @@ def predict_corners(home_team_name, away_team_name, competition_id, as_of_date=N
         "away_expected": away_expected,
         "results": results,
     }
+
+
+def recommend_corner_bet(total_expected, home_team_name, away_team_name):
+    """Single-tip corner line for a fixture, keyed on xC rounded to 1dp (as displayed).
+
+    Lines stay within the Over 7.5 - Under 12.5 band.
+    xC <= 8.3  -> Under 11.5
+    8.4 - 9.0  -> Under 12.5 (high-variance band, line shifted up)
+    9.1 - 10.3 -> Over 7.5
+    xC >= 10.4 -> Over 8.5
+    """
+    xc = round(total_expected, 1)
+    if xc <= 8.3:
+        return "Under 11.5"
+    if xc <= 9.0:
+        return "Under 12.5"
+    if xc < 10.4:
+        return "Over 7.5"
+    return "Over 8.5"
+
+
+def recommend_corner_bet_classic(total_expected, home_team_name, away_team_name):
+    """Original corner rule: < 9.0 Under 11.5, < 10.0 Over 7.5, else Over 8.5."""
+    if total_expected < 9.0:
+        return "Under 11.5"
+    if total_expected < 10.0:
+        return "Over 7.5"
+    return "Over 8.5"
+
+
+# Selectable corner tip rules, keyed by the name the API/UI uses
+CORNER_STRATEGIES = {
+    'tight': {
+        'label': 'Tight bands',
+        'description': 'U11.5 ≤ 8.3 · U12.5 8.4–9.0 · O7.5 9.1–10.3 · O8.5 ≥ 10.4',
+        'fn': recommend_corner_bet,
+    },
+    'classic': {
+        'label': 'Classic',
+        'description': 'U11.5 < 9.0 · O7.5 9.0–9.9 · O8.5 ≥ 10.0',
+        'fn': recommend_corner_bet_classic,
+    },
+}
+DEFAULT_CORNER_STRATEGY = 'tight'
+
+
+def corner_tip(strategy, total_expected, home_team_name, away_team_name):
+    """Corner tip under a named strategy, falling back to the default for unknown names."""
+    entry = CORNER_STRATEGIES.get(strategy) or CORNER_STRATEGIES[DEFAULT_CORNER_STRATEGY]
+    return entry['fn'](total_expected, home_team_name, away_team_name)

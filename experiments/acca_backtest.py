@@ -6,19 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from db.database import get_db
 from predictors.corners import predict_corners
 from predictors.goals import predict_goals
-
-def evaluate_pick(pick_name, actual_home, actual_away, actual_corners):
-    if pick_name == "Over 1.5 Goals":
-        return (actual_home + actual_away) > 1.5
-    elif pick_name == "Under 4.5 Goals":
-        return (actual_home + actual_away) < 4.5
-    elif pick_name == "Over 6.5 Corners":
-        return actual_corners > 6.5
-    elif pick_name == "Under 12.5 Corners":
-        return actual_corners < 12.5
-    elif pick_name == "Under 13.5 Corners":
-        return actual_corners < 13.5
-    return False
+from predictors.acca import build_accas, grade_leg
 
 def run_acca_backtest():
     competitions = ["epl_2024", "epl_2025"]
@@ -86,11 +74,10 @@ def run_acca_backtest():
                     continue
                     
                 fixtures.append({
+                    'match_id': match["id"],
                     'home_team': match["home_name"],
                     'away_team': match["away_name"],
-                    'actual_home': actual_home,
-                    'actual_away': actual_away,
-                    'actual_corners': actual_corners,
+                    'actual': {'home_score': actual_home, 'away_score': actual_away, 'corners': actual_corners},
                     'goals': {
                         'home_xg': g_pred['home_xg'],
                         'away_xg': g_pred['away_xg'],
@@ -103,50 +90,16 @@ def run_acca_backtest():
             if len(fixtures) < 3:
                 continue
                 
-            # Pick the 3 legs exactly as app.py does
-            acc_legs = []
-            
-            over_goal_cands = [f for f in fixtures if (f['goals']['home_xg'] + f['goals']['away_xg']) > 2.5]
-            if over_goal_cands:
-                best_goal_over = max(over_goal_cands, key=lambda f: f['goals']['home_xg'] + f['goals']['away_xg'])
-                acc_legs.append((best_goal_over, "Over 1.5 Goals"))
-                
-            over_corner_cands = [f for f in fixtures if f['corners']['total_expected'] >= 9.5]
-            if over_corner_cands:
-                best_corner_over = max(over_corner_cands, key=lambda f: f['corners']['total_expected'])
-                acc_legs.append((best_corner_over, "Over 6.5 Corners"))
-                
-            under_corner_cands = [f for f in fixtures if f['corners']['total_expected'] < 9.0]
-            if under_corner_cands:
-                best_corner_under = min(under_corner_cands, key=lambda f: f['corners']['total_expected'])
-                acc_legs.append((best_corner_under, "Under 13.5 Corners"))
-                
-            if len(acc_legs) < 3:
-                under_goal_cands = [f for f in fixtures if (f['goals']['home_xg'] + f['goals']['away_xg']) <= 2.5]
-                picked_matches = [leg[0]['home_team'] for leg in acc_legs]
-                under_goal_cands = [f for f in under_goal_cands if f['home_team'] not in picked_matches]
-                if under_goal_cands:
-                    best_goal_under = min(under_goal_cands, key=lambda f: f['goals']['home_xg'] + f['goals']['away_xg'])
-                    acc_legs.append((best_goal_under, "Under 4.5 Goals"))
-                    
-            if len(acc_legs) < 3:
-                under_c_cands2 = [f for f in fixtures if f['corners']['total_expected'] < 9.5]
-                picked_matches = [leg[0]['home_team'] for leg in acc_legs]
-                under_c_cands2 = [f for f in under_c_cands2 if f['home_team'] not in picked_matches]
-                if under_c_cands2:
-                    best_c2 = min(under_c_cands2, key=lambda f: f['corners']['total_expected'])
-                    acc_legs.append((best_c2, "Under 12.5 Corners"))
-                    
-            acca = acc_legs[:3]
+            acca, _ = build_accas(fixtures)
             if len(acca) < 3:
                 continue
-                
+
             # Evaluate the Acca
             acca_won = True
             # print(f"GW {i+1} ({competition_id}):")
-            for leg_fix, leg_pick in acca:
-                leg_won = evaluate_pick(leg_pick, leg_fix['actual_home'], leg_fix['actual_away'], leg_fix['actual_corners'])
-                if not leg_won:
+            fixtures_by_id = {f['match_id']: f for f in fixtures}
+            for leg in acca:
+                if not grade_leg(leg, fixtures_by_id):
                     acca_won = False
                     
             if acca_won:

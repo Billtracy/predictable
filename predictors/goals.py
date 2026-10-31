@@ -65,3 +65,12 @@ def predict_goals(home_team_name, away_team_name, competition_id, as_of_date=Non
         "away_xg": away_xg,
         "results": results,
     }
+
+
+def goal_tip(total_xg):
+    """The goals line we tip for a fixture, from its total expected goals."""
+    if total_xg > 3.0:
+        return "Over 2.5"
+    if total_xg > 2.5:
+        return "Over 1.5"
+    return "Under 3.5"

@@ -2,238 +2,110 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Predictable — EPL 2026/27 Predictions</title>
     <meta name="description" content="AI-powered Premier League 2026/27 match predictions using Poisson Monte Carlo simulation and expected goals models.">
+    <meta name="theme-color" content="#7b2bf9">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/ui.css">
+    <script src="/static/js/ui.js"></script>
     <style>
-        :root {
-            --bg: #06060e;
-            --surface: rgba(255,255,255,0.035);
-            --surface-hover: rgba(255,255,255,0.06);
-            --border: rgba(255,255,255,0.08);
-            --border-hover: rgba(255,255,255,0.18);
-            --text: #f0f0f5;
-            --text-muted: #8a8aa0;
-            --text-dim: #5a5a72;
-            --accent: #8b5cf6;
-            --accent-glow: rgba(139,92,246,0.25);
-            --epl-purple: #3d195b;
-            --epl-green: #00ff87;
-            --epl-pink: #e90052;
-            --win: #10b981;
-            --draw: #f59e0b;
-            --loss: #ef4444;
-            --radius: 14px;
+        /* === Matchweek nav === */
+        .mw-nav { display: grid; grid-template-columns: 36px 1fr 36px; align-items: center; gap: 8px; padding: 16px 20px 12px; }
+        .mw-title { text-align: center; border-radius: 12px; padding: 4px 8px; transition: background .2s; }
+        .mw-title:hover { background: var(--surface-2); }
+        .mw-title strong { display: flex; align-items: center; justify-content: center; gap: 6px; font-family: 'Outfit'; font-size: 19px; font-weight: 700; }
+        .mw-title strong svg { transition: transform .2s; color: var(--ink-3); }
+        .mw-title[aria-expanded="true"] strong svg { transform: rotate(180deg); }
+        .mw-title span { display: block; font-size: 13px; color: var(--ink-2); margin-top: 1px; min-height: 1.2em; }
+        .mw-picker {
+            margin: 0 20px 12px; padding: 12px; background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow);
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); gap: 6px;
         }
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body {
-            font-family: 'Inter', -apple-system, sans-serif;
-            background: var(--bg); color: var(--text);
-            min-height: 100vh; overflow-x: hidden;
+        .mw-picker button { height: 36px; border-radius: 10px; font-size: 13px; font-weight: 600; color: var(--ink-2); background: var(--surface-2); position: relative; }
+        .mw-picker button:hover { color: var(--ink); background: var(--line); }
+        .mw-picker button.played { color: var(--ink-3); }
+        .mw-picker button.live::after { content: ''; position: absolute; top: 5px; right: 5px; width: 5px; height: 5px; border-radius: 50%; background: var(--brand); }
+        .mw-picker button.active { background: var(--ink); color: var(--surface); }
+
+        /* === Fixture list === */
+        .day { font-family: 'Outfit'; font-size: 15px; font-weight: 700; padding: 16px 16px 4px; }
+        .fx { border-bottom: 1px solid var(--line); margin: 0 12px; }
+        .fx:last-child { border-bottom: 0; }
+        .fx summary { list-style: none; cursor: pointer; padding: 14px 4px 12px; border-radius: 12px; outline-offset: -2px; }
+        .fx summary::-webkit-details-marker { display: none; }
+        .fx summary:hover .score { background: var(--line); }
+        .fx-row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; }
+        .side { display: flex; align-items: center; gap: 10px; min-width: 0; }
+        .side.home { justify-content: flex-end; text-align: right; }
+        .tname { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .center { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .score {
+            min-width: 64px; padding: 6px 10px; border-radius: 8px; text-align: center;
+            background: var(--surface-2); font-family: 'Outfit'; font-size: 17px; font-weight: 700;
+            font-variant-numeric: tabular-nums; transition: background .2s;
         }
-        h1,h2,h3,.score-val { font-family: 'Outfit', sans-serif; }
+        .score.ko { font-size: 15px; font-weight: 600; color: var(--ink-2); }
+        .score.live { background: var(--brand); color: #fff; }
+        .status { font-size: 11px; font-weight: 600; color: var(--ink-3); letter-spacing: .3px; }
+        .status.hit { color: var(--won); }
+        .chips { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 
-        /* === Ambient background === */
-        .bg-effects { position:fixed; inset:0; z-index:-1; overflow:hidden; pointer-events:none; }
-        .orb { position:absolute; border-radius:50%; filter:blur(120px); opacity:.35; animation:drift 25s infinite alternate ease-in-out; }
-        .orb-1 { top:-15%; left:-10%; width:55vw; height:55vw; background:radial-gradient(circle,#3d195b 0%,transparent 70%); }
-        .orb-2 { bottom:-10%; right:-15%; width:45vw; height:45vw; background:radial-gradient(circle,#00ff87 0%,transparent 70%); opacity:.15; animation-delay:-8s; }
-        .orb-3 { top:35%; left:55%; width:30vw; height:30vw; background:radial-gradient(circle,#e90052 0%,transparent 70%); opacity:.12; animation-delay:-14s; }
-        @keyframes drift { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(4%,6%) scale(1.08)} }
+        /* Expanded detail */
+        .detail { padding: 2px 4px 16px; animation: reveal .2s ease-out; }
+        @keyframes reveal { from { opacity: 0; transform: translateY(-4px); } }
+        .probs-labels { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-2); margin-bottom: 6px; }
+        .probs-labels b { color: var(--ink); font-family: 'Outfit'; font-size: 14px; margin-right: 3px; }
+        .probs-bar { display: flex; height: 6px; gap: 3px; }
+        .probs-bar i { display: block; height: 100%; border-radius: 3px; }
+        .verdict { text-align: center; font-size: 12px; color: var(--ink-2); margin-top: 8px; }
+        .verdict b { color: var(--ink); }
+        .detail .tiles { margin-top: 14px; }
 
-        /* === Nav === */
-        nav {
-            display:flex; align-items:center; justify-content:space-between;
-            padding:1rem 2rem; border-bottom:1px solid var(--border);
-            background:rgba(6,6,14,0.7); backdrop-filter:blur(16px);
-            position:sticky; top:0; z-index:100;
+        /* Skeleton */
+        .skel-row { display: grid; grid-template-columns: 1fr 64px 1fr; gap: 10px; align-items: center; padding: 20px 16px; border-bottom: 1px solid var(--line); }
+        .skel-row .skel:first-child { justify-self: end; width: 70%; }
+        .skel-row .skel:nth-child(2) { height: 30px; border-radius: 8px; }
+        .skel-row .skel:last-child { width: 70%; }
+
+        /* === Accas === */
+        .leg { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; padding: 12px 16px; border-top: 1px solid var(--line); }
+        .leg-match { font-size: 13px; color: var(--ink-2); }
+        .leg-pick { font-family: 'Outfit'; font-size: 16px; font-weight: 700; }
+        .leg-reason { grid-column: 1 / -1; font-size: 12px; color: var(--ink-3); }
+        .leg .badge { grid-row: 1 / 3; grid-column: 2; }
+
+        /* === Model tab === */
+        .opt { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 12px 16px; border-top: 1px solid var(--line); transition: background .2s; }
+        .opt:hover { background: var(--surface-2); }
+        .opt-radio { flex: none; width: 18px; height: 18px; border-radius: 50%; box-shadow: inset 0 0 0 2px var(--ink-3); }
+        .opt[aria-checked="true"] .opt-radio { box-shadow: inset 0 0 0 5px var(--brand); }
+        .opt-main { flex: 1; min-width: 0; }
+        .opt-main b { display: block; font-size: 14px; font-weight: 600; }
+        .opt-main small { display: block; font-size: 12px; color: var(--ink-2); margin-top: 2px; line-height: 1.4; }
+        .opt-rate { text-align: right; font-family: 'Outfit'; font-weight: 700; font-size: 16px; }
+        .opt-rate small { display: block; font-family: 'Inter'; font-size: 10.5px; font-weight: 600; color: var(--ink-3); }
+        .group-label { font-size: 11px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; color: var(--ink-3); padding: 14px 16px 6px; border-top: 1px solid var(--line); }
+        .row-btn { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 11px 16px; transition: background .2s; }
+        .row-btn:hover { background: var(--surface-2); }
+        .row-btn:disabled { opacity: .5; cursor: progress; }
+        .row-btn .ic { flex: none; width: 34px; height: 34px; border-radius: 10px; background: var(--surface-2); display: grid; place-items: center; font-size: 10px; font-weight: 800; color: var(--brand); }
+        .row-btn span { flex: 1; font-size: 14px; font-weight: 600; }
+        .row-btn small { display: block; font-size: 12px; font-weight: 400; color: var(--ink-2); }
+        .row-btn svg { color: var(--ink-3); }
+        .export-status { font-size: 12px; color: var(--ink-2); padding: 0 16px 14px; min-height: 1px; }
+        .about { font-size: 13px; line-height: 1.55; color: var(--ink-2); padding: 0 16px 16px; }
+
+        @media (min-width: 761px) {
+            .mw-nav { padding-left: 4px; padding-right: 4px; }
+            .mw-picker { margin-left: 0; margin-right: 0; }
+            .tname { font-size: 15px; }
         }
-        .nav-brand { font-family:'Outfit'; font-weight:800; font-size:1.25rem;
-            background:linear-gradient(135deg,#fff,#c4b5fd); -webkit-background-clip:text; -webkit-text-fill-color:transparent; text-decoration:none; }
-        .nav-links { display:flex; gap:1.5rem; }
-        .nav-links a { color:var(--text-muted); text-decoration:none; font-size:.9rem; font-weight:500; transition:color .2s; }
-        .nav-links a:hover, .nav-links a.active { color:var(--epl-green); }
-
-        /* === Hero === */
-        .hero {
-            text-align:center; padding:3rem 2rem 2rem;
-            border-bottom:1px solid var(--border);
-            background:rgba(0,0,0,.2); backdrop-filter:blur(10px);
-        }
-        .hero h1 {
-            font-size:2.8rem; font-weight:800; margin-bottom:.6rem;
-            background:linear-gradient(to right,#fff 30%,#00ff87);
-            -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-        }
-        .hero .badge {
-            display:inline-block; font-family:'Inter'; font-size:.8rem; font-weight:600;
-            background:linear-gradient(135deg,var(--epl-purple),var(--epl-pink));
-            color:#fff; padding:.3rem .9rem; border-radius:20px; letter-spacing:.5px;
-            margin-left:.5rem; vertical-align:middle; -webkit-text-fill-color:white;
-        }
-        .hero p { color:var(--text-muted); font-size:1rem; max-width:550px; margin:.5rem auto 0; }
-        .hero .model-note { font-size:.8rem; color:var(--text-dim); margin-top:.6rem; }
-
-        /* === Gameweek Selector === */
-        .gw-bar {
-            display:flex; align-items:center; justify-content:center; gap:.8rem;
-            padding:1.2rem 2rem; background:rgba(0,0,0,.15);
-            border-bottom:1px solid var(--border);
-            flex-wrap:wrap;
-        }
-        .gw-btn {
-            background:var(--surface); border:1px solid var(--border); color:var(--text-muted);
-            padding:.5rem 1rem; border-radius:8px; cursor:pointer; font-size:.85rem;
-            font-weight:500; transition:all .2s; font-family:inherit; min-width:40px;
-        }
-        .gw-btn:hover { border-color:var(--border-hover); color:var(--text); background:var(--surface-hover); }
-        .gw-btn.active { background:var(--epl-purple); border-color:var(--epl-pink); color:#fff; font-weight:700; }
-        .gw-btn.nav-arrow { font-weight:700; font-size:1rem; padding:.5rem .8rem; }
-        .gw-label { color:var(--text-muted); font-size:.8rem; text-transform:uppercase; letter-spacing:1px; font-weight:600; }
-
-        /* === Container === */
-        .container { max-width:1100px; margin:0 auto; padding:2rem; }
-        .section-head { display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap; margin-bottom:1.5rem; }
-        .section-title { font-size:1.4rem; font-weight:700; display:flex; align-items:center; gap:.6rem; }
-
-        /* === Export menu === */
-        .export { position:relative; }
-        .export-btn { background:var(--surface); border:1px solid var(--border); color:var(--text);
-            padding:.5rem 1rem; border-radius:8px; cursor:pointer; font-size:.85rem; font-weight:600;
-            font-family:inherit; transition:all .2s; }
-        .export-btn:hover { border-color:var(--epl-green); color:var(--epl-green); }
-        .export-menu { position:absolute; right:0; top:calc(100% + .4rem); z-index:10; min-width:200px;
-            background:#12121e; border:1px solid var(--border-hover); border-radius:10px; padding:.35rem;
-            box-shadow:0 12px 32px rgba(0,0,0,.5); display:none; }
-        .export-menu.open { display:block; }
-        .export-menu button { display:block; width:100%; text-align:left; background:none; border:none;
-            color:var(--text); padding:.55rem .75rem; border-radius:6px; cursor:pointer; font-size:.85rem; font-family:inherit; }
-        .export-menu button:hover { background:var(--surface-hover); color:var(--epl-green); }
-        .export-menu small { display:block; color:var(--text-dim); font-size:.7rem; }
-        .export-group { font-size:.65rem; font-weight:700; letter-spacing:1px; text-transform:uppercase;
-            color:var(--text-dim); padding:.6rem .75rem .25rem; }
-        .export-group:not(:first-child) { border-top:1px solid var(--border); margin-top:.3rem; }
-        .export-btn:disabled { opacity:.6; cursor:progress; }
-
-        /* === Match Cards Grid === */
-        .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:1.5rem; }
-
-        .card {
-            background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
-            padding:1.4rem; backdrop-filter:blur(12px);
-            transition:transform .3s ease, border-color .3s ease, box-shadow .3s ease;
-            position:relative; overflow:hidden;
-        }
-        .card::before {
-            content:''; position:absolute; top:0; left:0; right:0; height:3px;
-            background:linear-gradient(to right,var(--epl-purple),var(--epl-green));
-            opacity:0; transition:opacity .3s;
-        }
-        .card:hover { transform:translateY(-4px); border-color:var(--border-hover); box-shadow:0 12px 32px rgba(0,0,0,.4); }
-        .card:hover::before { opacity:1; }
-
-        /* Match header */
-        .match-date { font-size:.78rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; text-align:center; margin-bottom:1rem; }
-        .teams { display:flex; justify-content:space-between; align-items:center; }
-        .team { flex:1; text-align:center; }
-        .team-name { font-weight:600; font-size:1.05rem; line-height:1.3; }
-        .team-xg { font-size:.8rem; color:var(--text-muted); margin-top:.3rem;
-            background:rgba(255,255,255,.04); display:inline-block; padding:.15rem .5rem; border-radius:10px; }
-        .vs { font-family:'Outfit'; font-weight:800; font-size:1rem; color:var(--text-dim); padding:0 .8rem; }
-
-        /* Probability bar */
-        .probs { margin-top:1.2rem; }
-        .probs-labels { display:flex; justify-content:space-between; font-size:.75rem; color:var(--text-muted); margin-bottom:.4rem; }
-        .probs-bar { display:flex; height:6px; border-radius:3px; overflow:hidden; gap:2px; }
-        .prob-seg { height:100%; border-radius:3px; transition:width .8s ease-out; }
-        .seg-win { background:var(--win); }
-        .seg-draw { background:var(--draw); }
-        .seg-loss { background:var(--loss); }
-        .prob-verdict { text-align:center; margin-top:.5rem; font-size:.8rem; font-weight:600; }
-        .prob-verdict.home { color:var(--win); }
-        .prob-verdict.draw { color:var(--draw); }
-        .prob-verdict.away { color:var(--loss); }
-
-        /* Stats row */
-        .stats { display:grid; grid-template-columns:1fr 1fr; gap:.8rem; margin-top:1rem;
-            background:rgba(0,0,0,.2); border-radius:10px; padding:.8rem; }
-        .stat { display:flex; flex-direction:column; gap:.15rem; }
-        .stat-label { font-size:.7rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:.5px; }
-        .stat-value { font-family:'Outfit'; font-size:1.2rem; font-weight:700; }
-        .stat-sub { font-size:.7rem; color:var(--text-muted); }
-
-        /* === States === */
-        .loading { text-align:center; padding:4rem 2rem; color:var(--text-muted); }
-        .spinner { width:28px; height:28px; border:3px solid var(--border); border-top-color:var(--accent);
-            border-radius:50%; animation:spin .8s linear infinite; margin:0 auto 1rem; }
-        @keyframes spin { to { transform:rotate(360deg); } }
-        .empty { text-align:center; padding:4rem 2rem; color:var(--text-muted); }
-        .empty-icon { font-size:3rem; margin-bottom:1rem; }
-
-        /* === Footer === */
-        footer { text-align:center; padding:3rem 2rem; color:var(--text-dim); font-size:.8rem; border-top:1px solid var(--border); margin-top:3rem; }
-        footer a { color:var(--text-muted); text-decoration:none; }
-
-        /* === Acca Banner === */
-        .acca-banner {
-            background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(0,255,135,0.1));
-            border: 1px solid var(--border-hover);
-            border-radius: var(--radius);
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        .acca-banner h3 {
-            margin-bottom: 1rem;
-            font-size: 1.2rem;
-            color: #fff;
-            display: flex; align-items: center; gap: 0.5rem;
-        }
-        .acca-legs {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1rem;
-        }
-        .acca-leg {
-            background: rgba(0,0,0,0.3);
-            padding: 1rem;
-            border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-        .acca-match { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.4rem; }
-        .acca-pick { font-size: 1.1rem; font-weight: 700; color: var(--epl-green); margin-bottom: 0.2rem; }
-        .acca-reason { font-size: 0.75rem; color: var(--text-dim); }
-        .acca-leg.won { border-color: rgba(16,185,129,0.4); }
-        .acca-leg.lost { border-color: rgba(239,68,68,0.35); opacity: .8; }
-        .acca-verdict { display:inline-block; font-size:.68rem; font-weight:700; padding:.1rem .5rem; border-radius:8px; margin-top:.4rem; }
-        .acca-verdict.won { background:rgba(16,185,129,0.15); color:var(--win); }
-        .acca-verdict.lost { background:rgba(239,68,68,0.15); color:var(--loss); }
-
-        /* === Final result badge on concluded fixture cards === */
-        .card.concluded { border-color:rgba(255,255,255,.14); }
-        .ft-banner {
-            display:flex; align-items:center; justify-content:center; gap:.6rem;
-            background:rgba(255,255,255,.04); border:1px solid var(--border);
-            border-radius:10px; padding:.6rem; margin-bottom:1rem;
-        }
-        .ft-tag { font-size:.65rem; font-weight:700; letter-spacing:.5px; color:var(--text-dim);
-            background:rgba(255,255,255,.06); padding:.1rem .45rem; border-radius:6px; }
-        .ft-score { font-family:'Outfit'; font-weight:800; font-size:1.3rem; }
-        .bet-verdict { display:inline-flex; align-items:center; gap:.3rem; font-size:.65rem; font-weight:700;
-            padding:2px 6px; border-radius:4px; }
-        .bet-verdict.won { background:rgba(16,185,129,0.15); color:var(--win); }
-        .bet-verdict.lost { background:rgba(239,68,68,0.15); color:var(--loss); }
-
-        /* === Responsive === */
-        @media(max-width:768px) {
-            .hero h1 { font-size:2rem; }
-            .grid { grid-template-columns:1fr; }
-            nav { padding:.8rem 1rem; }
-            .container { padding:1.2rem; }
-            .gw-bar { gap:.4rem; padding:.8rem 1rem; }
-            .gw-btn { padding:.4rem .7rem; font-size:.78rem; min-width:34px; }
+        @media (max-width: 380px) {
+            .side { gap: 7px; }
+            .tname { font-size: 13px; }
         }
     </style>
 
@@ -249,120 +121,184 @@
 </head>
 <body>
 
-<div class="bg-effects">
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
+<div class="app">
+    <header class="hero">
+        <div class="hero-top">
+            <a href="/" class="brand"><span class="brand-mark">P</span>Predictable</a>
+            <div class="hero-actions" data-nav="top"></div>
+        </div>
+        <h1>Predictions</h1>
+        <div class="season-pill">Premier League <b>2026/27</b></div>
+    </header>
+
+    <div class="tabs" role="tablist">
+        <button class="tab" role="tab" id="tab-matches" aria-controls="panel-matches" aria-selected="true" onclick="showTab('matches')">Matches</button>
+        <button class="tab" role="tab" id="tab-accas" aria-controls="panel-accas" aria-selected="false" onclick="showTab('accas')">Accas</button>
+        <button class="tab" role="tab" id="tab-model" aria-controls="panel-model" aria-selected="false" onclick="showTab('model')">Model</button>
+    </div>
+
+    <div id="mwSection">
+        <div class="mw-nav">
+            <button class="circle-btn" id="gwPrev" onclick="changeGW(-1)" aria-label="Previous matchweek">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <button class="mw-title" id="mwTitle" aria-expanded="false" aria-controls="mwPicker" onclick="togglePicker()">
+                <strong><span id="mwName">Matchweek</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></strong>
+                <span id="mwDates"></span>
+            </button>
+            <button class="circle-btn" id="gwNext" onclick="changeGW(1)" aria-label="Next matchweek">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+        </div>
+        <div class="mw-picker" id="mwPicker" hidden></div>
+    </div>
+
+    <main>
+        <section class="panel" id="panel-matches" role="tabpanel" aria-labelledby="tab-matches">
+            <div class="card" id="fixtures"></div>
+        </section>
+
+        <section class="panel" id="panel-accas" role="tabpanel" aria-labelledby="tab-accas" hidden>
+            <div id="accas"></div>
+        </section>
+
+        <section class="panel" id="panel-model" role="tabpanel" aria-labelledby="tab-model" hidden>
+            <div class="card">
+                <div class="card-head"><h2>Corner tip strategy</h2></div>
+                <div class="card-sub">The rule that picks each fixture's corner tip. Hit rate ignores odds: safer lines pay less.</div>
+                <div id="strategyList" role="radiogroup" aria-label="Corner tip strategy"></div>
+                <div class="card-sub" id="strategyNote" style="padding-top:12px"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-head"><h2>Export</h2></div>
+                <div class="group-label" id="exportCurrentLabel">This matchweek</div>
+                <button class="row-btn" onclick="runExport('current', 'word', this)"><i class="ic">DOC</i><span>Word document<small>With tables</small></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+                <button class="row-btn" onclick="runExport('current', 'pdf', this)"><i class="ic">PDF</i><span>PDF<small>Opens the print dialog, choose "Save as PDF"</small></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+                <button class="row-btn" onclick="runExport('current', 'csv', this)"><i class="ic">CSV</i><span>Spreadsheet<small>One row per fixture</small></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+                <div class="group-label">All played matchweeks</div>
+                <button class="row-btn" onclick="runExport('played', 'word', this)"><i class="ic">DOC</i><span>Word document<small>Results, outcomes &amp; tip record</small></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+                <button class="row-btn" onclick="runExport('played', 'pdf', this)"><i class="ic">PDF</i><span>PDF<small>Opens the print dialog, choose "Save as PDF"</small></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+                <button class="row-btn" onclick="runExport('played', 'csv', this)"><i class="ic">CSV</i><span>Spreadsheet<small>Every played fixture</small></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+                <div class="export-status" id="exportStatus" aria-live="polite"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-head"><h2>About the model</h2></div>
+                <p class="about">Each fixture is simulated 10,000 times with a Poisson model driven by expected goals and cross-season team ratings, using leak-free priors. Predictions update after every matchweek. <a href="/backtest" style="color:var(--brand); font-weight:600; text-decoration:none">See the backtest results →</a></p>
+            </div>
+        </section>
+    </main>
+
+    <footer>Predictable AI · Poisson engine with leak-free cross-season priors</footer>
 </div>
 
-<nav>
-    <a href="/" class="nav-brand">Predictable</a>
-    <div class="nav-links">
-        <a href="/epl" class="active">EPL 26/27</a>
-        <a href="/calculator">Acca Calculator</a>
-        <a href="/game">Beat the Model</a>
-        <a href="/game/gameweek">Gameweek Mode</a>
-    </div>
-</nav>
-
-<header class="hero">
-    <h1>Premier League <span class="badge">2026/27</span></h1>
-    <p>Match predictions powered by Poisson Monte Carlo simulation, xG models, and cross-season team ratings.</p>
-    <div class="model-note">10,000 simulations per match · Updated after each gameweek</div>
-</header>
-
-<div class="gw-bar" id="gwBar">
-    <span class="gw-label">Gameweek</span>
-    <button class="gw-btn nav-arrow" id="gwPrev" onclick="changeGW(-1)">‹</button>
-    <div id="gwButtons"></div>
-    <button class="gw-btn nav-arrow" id="gwNext" onclick="changeGW(1)">›</button>
-</div>
-
-<main class="container">
-    <div id="loading" class="loading">
-        <div class="spinner"></div>
-        Loading predictions…
-    </div>
-    <div id="content" style="display:none">
-        <div class="section-head">
-            <div class="section-title" id="sectionTitle">⚽ Gameweek 1 Predictions</div>
-            <div class="export" id="export">
-                <button class="export-btn" id="exportBtn" onclick="toggleExportMenu(event)">⬇ Export</button>
-                <div class="export-menu" id="exportMenu">
-                    <div class="export-group" id="exportCurrentLabel">This gameweek</div>
-                    <button onclick="runExport('current', 'word')">Word document<small>.doc, with tables</small></button>
-                    <button onclick="runExport('current', 'pdf')">PDF<small>via print dialog, choose "Save as PDF"</small></button>
-                    <button onclick="runExport('current', 'csv')">Spreadsheet<small>.csv, one row per fixture</small></button>
-                    <div class="export-group">All played gameweeks</div>
-                    <button onclick="runExport('played', 'word')">Word document<small>results, outcomes &amp; tip record</small></button>
-                    <button onclick="runExport('played', 'pdf')">PDF<small>via print dialog, choose "Save as PDF"</small></button>
-                    <button onclick="runExport('played', 'csv')">Spreadsheet<small>.csv, every played fixture</small></button>
-                </div>
-            </div>
-        </div>
-        
-        <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem;">
-            <div id="accaBanner" class="acca-banner" style="display:none; margin-bottom: 0; flex: 1 1 calc(50% - 0.5rem); min-width: 300px;">
-                <h3>🏆 Ultimate 3-Leg Acca</h3>
-                <div class="acca-legs" id="accaLegs"></div>
-            </div>
-            
-            <div id="cornerAccaBanner" class="acca-banner" style="display:none; margin-bottom: 0; flex: 1 1 calc(50% - 0.5rem); min-width: 300px; border-color: rgba(94, 234, 212, 0.2); background: linear-gradient(135deg, rgba(94, 234, 212, 0.05) 0%, rgba(94, 234, 212, 0.0) 100%);">
-                <h3 style="color: var(--epl-cyan);">📐 Optimum 3-Corner Acca</h3>
-                <div class="acca-legs" id="cornerAccaLegs"></div>
-            </div>
-        </div>
-
-        <div class="grid" id="grid"></div>
-    </div>
-    <div id="empty" class="empty" style="display:none">
-        <div class="empty-icon">📋</div>
-        <p>No upcoming fixtures for this gameweek.</p>
-    </div>
-</main>
-
-<footer>
-    <p>Built with ❤️ by <a href="#">Predictable AI</a> · Poisson engine with leak-free cross-season priors</p>
-</footer>
+<nav class="bottom-nav" aria-label="Main" data-nav="bottom"></nav>
 
 <script>
 const $ = id => document.getElementById(id);
 let currentGW = 1;
+let liveGW = 1; // first matchweek with unplayed fixtures
 let totalGWs = 1;
-let gwData = {}; // cache
+let gwData = {}; // cache for the active corner strategy
+let loadToken = 0;
+let cornerStrategies = [];
+let cornerStrategy = null; // null = server default
 
-async function init() {
+const STRATEGY_KEY = 'predictable.cornerStrategy';
+try { cornerStrategy = localStorage.getItem(STRATEGY_KEY); } catch (e) {}
+
+const FINISHED = ['FT', 'AET', 'PEN'];
+const LIVE = ['1H', 'HT', '2H', 'ET', 'BT', 'P', 'LIVE', 'INT'];
+
+// === Tabs ===
+function showTab(name) {
+    ['matches', 'accas', 'model'].forEach(t => {
+        $('tab-' + t).setAttribute('aria-selected', t === name);
+        $('panel-' + t).hidden = t !== name;
+    });
+    $('mwSection').hidden = name === 'model';
+    history.replaceState(null, '', name === 'matches' ? location.pathname : '#' + name);
+}
+
+// === Corner strategies ===
+function gwUrl(gw) {
+    return `/api/epl/gameweek/${gw}` + (cornerStrategy ? `?corner_strategy=${encodeURIComponent(cornerStrategy)}` : '');
+}
+
+async function loadStrategies() {
     try {
-        const r = await fetch('/api/epl/gameweeks');
+        const r = await fetch('/api/corner-strategies');
         const d = await r.json();
-        if (!d.success) throw new Error(d.error);
-        totalGWs = d.total_gameweeks;
-        currentGW = d.current_gameweek || 1;
-        renderGWButtons();
-        loadGameweek(currentGW);
-    } catch(e) {
-        $('loading').innerHTML = '<p>Error loading gameweeks. Ensure the backend is running.</p>';
+        if (!d.success) return;
+        cornerStrategies = d.strategies;
+        if (!cornerStrategies.some(s => s.id === cornerStrategy)) cornerStrategy = d.default;
+        renderStrategies();
+    } catch (e) {
         console.error(e);
     }
 }
 
-function renderGWButtons() {
-    const container = $('gwButtons');
-    container.innerHTML = '';
-    // Show a window of GWs around the current one
-    const windowSize = window.innerWidth < 600 ? 5 : 9;
-    const half = Math.floor(windowSize / 2);
-    let start = Math.max(1, currentGW - half);
-    let end = Math.min(totalGWs, start + windowSize - 1);
-    start = Math.max(1, end - windowSize + 1);
+function renderStrategies() {
+    $('strategyList').innerHTML = cornerStrategies.map(s => `
+        <button class="opt" role="radio" aria-checked="${s.id === cornerStrategy}" onclick="setStrategy('${esc(s.id)}')">
+            <span class="opt-radio"></span>
+            <span class="opt-main"><b>${esc(s.label)}</b><small>${esc(s.description)}</small></span>
+            ${s.backtest ? `<span class="opt-rate">${s.backtest.hit_rate}%<small>hit rate</small></span>` : ''}
+        </button>`).join('');
+    const active = cornerStrategies.find(s => s.id === cornerStrategy);
+    const bt = active && active.backtest;
+    $('strategyNote').textContent = bt
+        ? `Backtest: ${bt.wins}/${bt.bets} tips landed, ${bt.perfect_gws} perfect matchweeks of ${bt.gameweeks}.`
+        : '';
+}
 
-    for (let i = start; i <= end; i++) {
-        const btn = document.createElement('button');
-        btn.className = 'gw-btn' + (i === currentGW ? ' active' : '');
-        btn.textContent = i;
-        btn.onclick = () => loadGameweek(i);
-        container.appendChild(btn);
+function setStrategy(id) {
+    if (id === cornerStrategy) return;
+    cornerStrategy = id;
+    try { localStorage.setItem(STRATEGY_KEY, id); } catch (e) {}
+    gwData = {};
+    renderStrategies();
+    loadGameweek(currentGW);
+}
+
+// === Matchweeks ===
+async function init() {
+    const hash = location.hash.slice(1);
+    if (hash === 'accas' || hash === 'model') showTab(hash);
+    try {
+        await loadStrategies();
+        const r = await fetch('/api/epl/gameweeks');
+        const d = await r.json();
+        if (!d.success) throw new Error(d.error);
+        totalGWs = d.total_gameweeks;
+        liveGW = currentGW = d.current_gameweek || 1;
+        loadGameweek(currentGW);
+    } catch (e) {
+        $('fixtures').innerHTML = emptyState('Couldn\'t load matchweeks', 'Make sure the backend is running, then refresh.');
+        console.error(e);
     }
+}
+
+function renderPicker() {
+    const picker = $('mwPicker');
+    picker.innerHTML = '';
+    for (let i = 1; i <= totalGWs; i++) {
+        const btn = document.createElement('button');
+        btn.textContent = i;
+        btn.className = [i === currentGW && 'active', i < liveGW && 'played', i === liveGW && 'live'].filter(Boolean).join(' ');
+        btn.setAttribute('aria-label', `Matchweek ${i}`);
+        btn.onclick = () => { togglePicker(false); loadGameweek(i); };
+        picker.appendChild(btn);
+    }
+}
+
+function togglePicker(open) {
+    const picker = $('mwPicker');
+    open = open ?? picker.hidden;
+    if (open) renderPicker();
+    picker.hidden = !open;
+    $('mwTitle').setAttribute('aria-expanded', open);
 }
 
 function changeGW(delta) {
@@ -370,174 +306,179 @@ function changeGW(delta) {
     if (next >= 1 && next <= totalGWs) loadGameweek(next);
 }
 
+document.addEventListener('keydown', e => {
+    if (e.target.closest('input, textarea') || $('panel-model').hidden === false) return;
+    if (e.key === 'ArrowLeft') changeGW(-1);
+    if (e.key === 'ArrowRight') changeGW(1);
+    if (e.key === 'Escape') togglePicker(false);
+});
+
+function emptyState(title, text) {
+    return `<div class="empty"><strong>${esc(title)}</strong>${esc(text)}</div>`;
+}
+
+function skeleton() {
+    return Array.from({ length: 5 }, () => '<div class="skel-row"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>').join('');
+}
+
 async function loadGameweek(gw) {
+    const token = ++loadToken;
     currentGW = gw;
-    renderGWButtons();
-    $('sectionTitle').textContent = `⚽ Gameweek ${gw} Predictions`;
-    $('content').style.display = 'none';
-    $('empty').style.display = 'none';
-    $('loading').style.display = 'block';
+    $('mwName').textContent = `Matchweek ${gw}`;
+    $('mwDates').textContent = '';
+    $('gwPrev').disabled = gw <= 1;
+    $('gwNext').disabled = gw >= totalGWs;
+    $('exportCurrentLabel').textContent = `This matchweek (MW ${gw})`;
+    if (!$('mwPicker').hidden) renderPicker();
+
+    if (!gwData[gw]) {
+        $('fixtures').innerHTML = skeleton();
+        $('accas').innerHTML = '<div class="card">' + skeleton() + '</div>';
+    }
 
     try {
-        let data = gwData[gw];
-        if (!data) {
-            const r = await fetch(`/api/epl/gameweek/${gw}`);
-            data = await r.json();
-            if (data.success) gwData[gw] = data;
-        }
+        const data = await fetchGameweek(gw);
+        if (token !== loadToken) return; // a newer matchweek was requested meanwhile
 
-        $('loading').style.display = 'none';
-
-        if (!data.success || !data.fixtures || data.fixtures.length === 0) {
-            $('empty').style.display = 'block';
+        if (!data || !data.fixtures || data.fixtures.length === 0) {
+            $('fixtures').innerHTML = emptyState('No fixtures', 'There are no fixtures to predict for this matchweek.');
+            $('accas').innerHTML = '<div class="card">' + emptyState('No accas', 'Nothing to build an acca from this matchweek.') + '</div>';
             return;
         }
 
-        const grid = $('grid');
-        grid.innerHTML = '';
-        data.fixtures.forEach(f => grid.appendChild(createCard(f)));
-        
-        const accaBanner = $('accaBanner');
-        const accaLegs = $('accaLegs');
-        if (data.acca && data.acca.length > 0) {
-            accaLegs.innerHTML = '';
-            data.acca.forEach(leg => {
-                accaLegs.innerHTML += `
-                    <div class="acca-leg${leg.won === true ? ' won' : leg.won === false ? ' lost' : ''}">
-                        <div class="acca-match">${leg.match}</div>
-                        <div class="acca-pick">${leg.pick}</div>
-                        <div class="acca-reason">${leg.reason}</div>
-                        ${leg.won !== null && leg.won !== undefined ? `<div class="acca-verdict ${leg.won ? 'won' : 'lost'}">${leg.won ? '✓ WON' : '✗ LOST'}</div>` : ''}
-                    </div>
-                `;
-            });
-            accaBanner.style.display = 'block';
-        } else {
-            accaBanner.style.display = 'none';
-        }
-
-        const cornerAccaBanner = $('cornerAccaBanner');
-        const cornerAccaLegs = $('cornerAccaLegs');
-        if (data.corner_acca && data.corner_acca.length > 0) {
-            cornerAccaLegs.innerHTML = '';
-            data.corner_acca.forEach(leg => {
-                cornerAccaLegs.innerHTML += `
-                    <div class="acca-leg${leg.won === true ? ' won' : leg.won === false ? ' lost' : ''}" style="border-color: rgba(94, 234, 212, 0.1);">
-                        <div class="acca-match">${leg.match}</div>
-                        <div class="acca-pick" style="color: var(--epl-cyan);">${leg.pick}</div>
-                        <div class="acca-reason">${leg.reason}</div>
-                        ${leg.won !== null && leg.won !== undefined ? `<div class="acca-verdict ${leg.won ? 'won' : 'lost'}">${leg.won ? '✓ WON' : '✗ LOST'}</div>` : ''}
-                    </div>
-                `;
-            });
-            cornerAccaBanner.style.display = 'block';
-        } else {
-            cornerAccaBanner.style.display = 'none';
-        }
-
-        $('content').style.display = 'block';
-
-        // Animate probability bars
-        requestAnimationFrame(() => {
-            document.querySelectorAll('.prob-seg').forEach(el => {
-                el.style.width = el.dataset.w;
-            });
-        });
-    } catch(e) {
-        $('loading').innerHTML = '<p>Error loading predictions.</p>';
+        const first = data.fixtures[0].date, last = data.fixtures[data.fixtures.length - 1].date;
+        $('mwDates').textContent = fmtDay(first) === fmtDay(last) ? fmtDay(first) : `${fmtDay(first)} – ${fmtDay(last)}`;
+        renderFixtures(data.fixtures);
+        renderAccas(data);
+    } catch (e) {
+        if (token !== loadToken) return;
+        $('fixtures').innerHTML = emptyState('Couldn\'t load predictions', 'Please try again in a moment.');
         console.error(e);
     }
 }
 
+// === Rendering ===
 function fmtDate(iso) {
     const d = new Date(iso);
     return d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
 }
 
-function betTag(label, won) {
-    if (won === null || won === undefined) {
-        return `<span style="position:absolute; top:0; right:0; background:rgba(0,255,135,0.1); color:var(--epl-green); padding:2px 6px; border-radius:4px; font-size:0.65rem; font-weight:700;">TIP: ${label}</span>`;
-    }
-    return `<span class="bet-verdict ${won ? 'won' : 'lost'}" style="position:absolute; top:0; right:0;">${label} ${won ? '✓' : '✗'}</span>`;
+function fmtDay(iso) {
+    return new Date(iso).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }).replace(',', '');
 }
 
-function createCard(f) {
-    const g = f.goals;
-    const c = f.corners;
-    const concluded = !!f.actual;
-    const maxProb = Math.max(g.win_prob, g.draw_prob, g.loss_prob);
-    let verdictText, verdictClass;
-    if (g.win_prob === maxProb) { verdictText = `${f.home_team} favoured`; verdictClass = 'home'; }
-    else if (g.loss_prob === maxProb) { verdictText = `${f.away_team} favoured`; verdictClass = 'away'; }
-    else { verdictText = 'Tight match — draw likely'; verdictClass = 'draw'; }
+function fmtTime(iso) {
+    return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
 
-    const ftBanner = concluded ? `
-        <div class="ft-banner">
-            <span class="ft-tag">FULL TIME</span>
-            <span class="ft-score">${f.home_team} ${f.actual.home_score}–${f.actual.away_score} ${f.away_team}</span>
-            ${f.actual.corners !== null && f.actual.corners !== undefined ? `<span class="ft-tag">${f.actual.corners} corners</span>` : ''}
-        </div>
-    ` : '';
+function chip(label, bet, won) {
+    if (!bet) return '';
+    const cls = won === true ? ' won' : won === false ? ' lost' : '';
+    const mark = won === true ? ' ✓' : won === false ? ' ✗' : '';
+    return `<span class="chip${cls}">${label} <b>${esc(bet)}${mark}</b></span>`;
+}
 
-    const card = document.createElement('div');
-    card.className = 'card' + (concluded ? ' concluded' : '');
-    card.innerHTML = `
-        <div class="match-date">${fmtDate(f.date)}</div>
-        ${ftBanner}
-        <div class="teams">
-            <div class="team">
-                <div class="team-name">${f.home_team}</div>
-                <div class="team-xg">xG ${g.home_xg.toFixed(2)}</div>
+function renderFixtures(fixtures) {
+    let html = '', lastDay = null;
+    fixtures.forEach(f => {
+        const day = fmtDay(f.date);
+        if (day !== lastDay) { html += `<div class="day">${esc(day)}</div>`; lastDay = day; }
+        html += fixtureHTML(f);
+    });
+    $('fixtures').innerHTML = html;
+}
+
+function fixtureHTML(f) {
+    const g = f.goals, c = f.corners, a = f.actual;
+    const home = team(f.home_team), away = team(f.away_team);
+    const live = LIVE.includes(f.status);
+
+    let scoreBox, status;
+    if (a) {
+        const hit = g.most_likely_score === `${a.home_score}–${a.away_score}`;
+        scoreBox = `<div class="score num">${a.home_score} - ${a.away_score}</div>`;
+        status = `<div class="status${hit ? ' hit' : ''}">${hit ? 'FT · Exact score ✓' : 'FT'}</div>`;
+    } else {
+        scoreBox = live
+            ? `<div class="score live num">${esc(f.status)}</div>`
+            : `<div class="score ko num">${fmtTime(f.date)}</div>`;
+    }
+
+    const max = Math.max(g.win_prob, g.draw_prob, g.loss_prob);
+    if (!a) {
+        const fav = g.win_prob === max ? home.code : g.loss_prob === max ? away.code : 'Draw';
+        status = `<div class="status">${esc(fav)} ${max}%</div>`;
+    }
+    const verdict = g.win_prob === max ? `<b>${esc(home.short)}</b> favoured`
+        : g.loss_prob === max ? `<b>${esc(away.short)}</b> favoured`
+        : '<b>Tight match</b>, draw most likely';
+    const actualCorners = a && a.corners !== null && a.corners !== undefined;
+
+    return `
+    <details class="fx">
+        <summary aria-label="${esc(home.short)} v ${esc(away.short)}">
+            <div class="fx-row">
+                <div class="side home"><span class="tname">${esc(home.short)}</span>${crest(f.home_team)}</div>
+                <div class="center">${scoreBox}</div>
+                <div class="side away">${crest(f.away_team)}<span class="tname">${esc(away.short)}</span></div>
             </div>
-            <div class="vs">VS</div>
-            <div class="team">
-                <div class="team-name">${f.away_team}</div>
-                <div class="team-xg">xG ${g.away_xg.toFixed(2)}</div>
+            <div class="center" style="margin-top:4px">${status}</div>
+            <div class="chips">
+                ${chip('Goals', g.recommended_bet, g.bet_won)}
+                ${chip('Corners', c.recommended_bet, c.bet_won)}
             </div>
-        </div>
-        <div class="probs">
+        </summary>
+        <div class="detail">
             <div class="probs-labels">
-                <span>${g.win_prob}%</span>
-                <span>${g.draw_prob}%</span>
-                <span>${g.loss_prob}%</span>
+                <span><b>${g.win_prob}%</b>${esc(home.code)}</span>
+                <span><b>${g.draw_prob}%</b>Draw</span>
+                <span><b>${g.loss_prob}%</b>${esc(away.code)}</span>
             </div>
             <div class="probs-bar">
-                <div class="prob-seg seg-win" style="width:0" data-w="${g.win_prob}%"></div>
-                <div class="prob-seg seg-draw" style="width:0" data-w="${g.draw_prob}%"></div>
-                <div class="prob-seg seg-loss" style="width:0" data-w="${g.loss_prob}%"></div>
+                <i style="width:${g.win_prob}%; background:var(--p-home)"></i>
+                <i style="width:${g.draw_prob}%; background:var(--p-draw)"></i>
+                <i style="width:${g.loss_prob}%; background:var(--p-away)"></i>
             </div>
-            <div class="prob-verdict ${verdictClass}">${verdictText}</div>
-        </div>
-        <div class="stats">
-            <div class="stat" style="position:relative;">
-                <span class="stat-label">Likely Score</span>
-                <span class="stat-value score-val">${g.most_likely_score}</span>
-                ${g.recommended_bet ? betTag(g.recommended_bet, g.bet_won) : ''}
-                <span class="stat-sub">BTTS ${g.btts_prob}% · O2.5 ${g.over_2_5_prob}%</span>
-            </div>
-            <div class="stat" style="position:relative;">
-                <span class="stat-label">Corners</span>
-                <span class="stat-value">${c.total_expected}</span>
-                ${c.recommended_bet ? betTag(c.recommended_bet, c.bet_won) : ''}
-                <span class="stat-sub">O8.5 ${c.over_8_5_prob}% · O9.5 ${c.over_9_5_prob}%</span>
+            <div class="verdict">${verdict}</div>
+            <div class="tiles">
+                <div class="tile"><div class="tile-label">Exp. goals</div><div class="tile-value">${g.home_xg.toFixed(1)}–${g.away_xg.toFixed(1)}</div><div class="tile-sub">Total ${(g.home_xg + g.away_xg).toFixed(2)}</div></div>
+                <div class="tile"><div class="tile-label">Likely score</div><div class="tile-value">${esc(g.most_likely_score)}</div>${a ? `<div class="tile-sub">Actual ${a.home_score}–${a.away_score}</div>` : ''}</div>
+                <div class="tile"><div class="tile-label">BTTS</div><div class="tile-value">${g.btts_prob}%</div>${a ? `<div class="tile-sub">${a.home_score > 0 && a.away_score > 0 ? 'Landed' : 'Didn\'t land'}</div>` : ''}</div>
+                <div class="tile"><div class="tile-label">Over 2.5</div><div class="tile-value">${g.over_2_5_prob}%</div>${a ? `<div class="tile-sub">${a.home_score + a.away_score} goals</div>` : ''}</div>
+                <div class="tile"><div class="tile-label">Corners</div><div class="tile-value">${c.total_expected}</div><div class="tile-sub">${actualCorners ? `Actual ${a.corners}` : `${c.home_expected} – ${c.away_expected}`}</div></div>
+                <div class="tile"><div class="tile-label">Corners over 9.5</div><div class="tile-value">${c.over_9_5_prob}%</div><div class="tile-sub">Over 8.5: ${c.over_8_5_prob}%</div></div>
             </div>
         </div>
-    `;
-    return card;
+    </details>`;
+}
+
+function accaCardHTML(title, sub, legs) {
+    if (!legs || !legs.length) return '';
+    const result = accaResult(legs);
+    const badge = result === 'Won' ? '<span class="badge won">✓ Won</span>'
+        : result === 'Lost' ? '<span class="badge lost">✗ Lost</span>'
+        : '<span class="badge">Pending</span>';
+    return `
+    <div class="card">
+        <div class="card-head"><h2>${esc(title)}</h2>${badge}</div>
+        <div class="card-sub">${esc(sub)}</div>
+        ${legs.map(l => `
+        <div class="leg">
+            <div class="leg-match">${esc(l.match)}</div>
+            <div class="leg-pick">${esc(l.pick)}</div>
+            <div class="leg-reason">${esc(l.reason)}</div>
+            ${l.won === true ? '<span class="badge won">✓</span>' : l.won === false ? '<span class="badge lost">✗</span>' : ''}
+        </div>`).join('')}
+    </div>`;
+}
+
+function renderAccas(data) {
+    const html = accaCardHTML('Ultimate 3-Leg Acca', 'Goals and corner lines, one leg per fixture.', data.acca)
+        + accaCardHTML('Optimum 3-Corner Acca', 'Three corner lines from the matchweek\'s extremes.', data.corner_acca);
+    $('accas').innerHTML = html || '<div class="card">' + emptyState('No accas this matchweek', 'No picks cleared the model\'s confidence bar.') + '</div>';
 }
 
 // === Export ===
-function toggleExportMenu(e) {
-    e.stopPropagation();
-    $('exportCurrentLabel').textContent = `This gameweek (GW ${currentGW})`;
-    $('exportMenu').classList.toggle('open');
-}
-document.addEventListener('click', () => $('exportMenu').classList.remove('open'));
-
-function esc(v) {
-    return String(v ?? '').replace(/[&<>"]/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[ch]));
-}
-
 function betResult(won) {
     return won === true ? 'Won' : won === false ? 'Lost' : '';
 }
@@ -559,7 +500,7 @@ function downloadBlob(content, type, filename) {
 
 async function fetchGameweek(gw) {
     if (!gwData[gw]) {
-        const r = await fetch(`/api/epl/gameweek/${gw}`);
+        const r = await fetch(gwUrl(gw));
         const data = await r.json();
         if (data.success) gwData[gw] = data;
     }
@@ -786,15 +727,16 @@ function exportCSV(scope, sets) {
     downloadBlob('﻿' + lines.join('\r\n'), 'text/csv;charset=utf-8', exportFilename(scope, sets, 'csv'));
 }
 
-async function runExport(scope, format) {
-    const btn = $('exportBtn');
-    $('exportMenu').classList.remove('open');
-    btn.disabled = true;
+
+async function runExport(scope, format, btn) {
+    const status = $('exportStatus');
+    document.querySelectorAll('.row-btn').forEach(b => b.disabled = true);
+    status.textContent = 'Preparing export…';
     try {
         let sets;
         if (scope === 'played') {
             sets = await fetchPlayedGameweeks((done, total) => {
-                btn.textContent = `Loading GW ${done}/${total}…`;
+                status.textContent = `Loading matchweek ${done} of ${total}…`;
             });
         } else {
             const data = await fetchGameweek(currentGW);
@@ -803,17 +745,17 @@ async function runExport(scope, format) {
                 : [];
         }
         if (!sets.length) {
-            alert(scope === 'played' ? 'No gameweeks have been played yet.' : 'No fixtures to export for this gameweek.');
+            status.textContent = scope === 'played' ? 'No matchweeks have been played yet.' : 'No fixtures to export for this matchweek.';
             return;
         }
         ({ word: exportWord, pdf: exportPDF, csv: exportCSV })[format](scope, sets);
+        status.textContent = '';
         gtag('event', 'export', { format, scope, gameweek: currentGW });
     } catch (e) {
         console.error(e);
-        alert('Export failed. Please try again.');
+        status.textContent = 'Export failed. Please try again.';
     } finally {
-        btn.disabled = false;
-        btn.textContent = '⬇ Export';
+        document.querySelectorAll('.row-btn').forEach(b => b.disabled = false);
     }
 }
 

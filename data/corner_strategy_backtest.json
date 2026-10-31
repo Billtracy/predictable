@@ -1,0 +1,2193 @@
+{
+  "meta": {
+    "competitions": [
+      "epl_2024",
+      "epl_2025"
+    ],
+    "matches": 759,
+    "generated_at": "2026-10-30T03:26:06+00:00",
+    "accas": {
+      "ultimate": {
+        "accas": 76,
+        "won": 40,
+        "legs": 228,
+        "legs_won": 182,
+        "win_rate": 52.6,
+        "leg_hit_rate": 79.8,
+        "fair_odds": 2.128
+      },
+      "corner": {
+        "accas": 78,
+        "won": 40,
+        "legs": 234,
+        "legs_won": 188,
+        "win_rate": 51.3,
+        "leg_hit_rate": 80.3,
+        "fair_odds": 2.253
+      }
+    },
+    "goal_tips": {
+      "bets": 759,
+      "wins": 573,
+      "hit_rate": 75.5,
+      "gameweeks": 78,
+      "perfect_gws": 4,
+      "gws_80_plus": 38,
+      "worst_gw_rate": 40.0,
+      "by_pick": {
+        "Over 1.5": {
+          "bets": 313,
+          "wins": 263,
+          "hit_rate": 84.0,
+          "base_rate": 80.2
+        },
+        "Over 2.5": {
+          "bets": 25,
+          "wins": 14,
+          "hit_rate": 56.0,
+          "base_rate": 55.9
+        },
+        "Under 3.5": {
+          "bets": 421,
+          "wins": 296,
+          "hit_rate": 70.3,
+          "base_rate": 68.6
+        }
+      }
+    },
+    "goal_markets": {
+      "btts": {
+        "label": "Both teams to score",
+        "matches": 759,
+        "accuracy": 51.3,
+        "baseline_accuracy": 56.8,
+        "actual_rate": 56.8,
+        "avg_predicted": 48.1,
+        "brier": 0.2547,
+        "baseline_brier": 0.2454,
+        "calibration": [
+          {
+            "range": "0\u201340%",
+            "matches": 70,
+            "predicted": 35.7,
+            "actual": 52.9
+          },
+          {
+            "range": "40\u201350%",
+            "matches": 382,
+            "predicted": 45.7,
+            "actual": 55.0
+          },
+          {
+            "range": "50\u201360%",
+            "matches": 291,
+            "predicted": 53.5,
+            "actual": 61.5
+          },
+          {
+            "range": "60\u201370%",
+            "matches": 15,
+            "predicted": 61.4,
+            "actual": 33.3
+          },
+          {
+            "range": "70\u2013100%",
+            "matches": 1,
+            "predicted": 88.0,
+            "actual": 0.0
+          }
+        ]
+      },
+      "o15": {
+        "label": "Over 1.5 goals",
+        "matches": 759,
+        "accuracy": 79.4,
+        "baseline_accuracy": 80.2,
+        "actual_rate": 80.2,
+        "avg_predicted": 70.5,
+        "brier": 0.1717,
+        "baseline_brier": 0.1586,
+        "calibration": [
+          {
+            "range": "0\u201340%",
+            "matches": 4,
+            "predicted": 31.2,
+            "actual": 100.0
+          },
+          {
+            "range": "40\u201350%",
+            "matches": 2,
+            "predicted": 48.3,
+            "actual": 100.0
+          },
+          {
+            "range": "50\u201360%",
+            "matches": 38,
+            "predicted": 56.5,
+            "actual": 78.9
+          },
+          {
+            "range": "60\u201370%",
+            "matches": 280,
+            "predicted": 66.3,
+            "actual": 77.5
+          },
+          {
+            "range": "70\u2013100%",
+            "matches": 435,
+            "predicted": 74.9,
+            "actual": 81.8
+          }
+        ]
+      },
+      "o25": {
+        "label": "Over 2.5 goals",
+        "matches": 759,
+        "accuracy": 47.6,
+        "baseline_accuracy": 55.9,
+        "actual_rate": 55.9,
+        "avg_predicted": 44.5,
+        "brier": 0.2627,
+        "baseline_brier": 0.2466,
+        "calibration": [
+          {
+            "range": "0\u201340%",
+            "matches": 194,
+            "predicted": 34.6,
+            "actual": 51.5
+          },
+          {
+            "range": "40\u201350%",
+            "matches": 367,
+            "predicted": 44.7,
+            "actual": 57.8
+          },
+          {
+            "range": "50\u201360%",
+            "matches": 189,
+            "predicted": 53.3,
+            "actual": 56.6
+          },
+          {
+            "range": "60\u201370%",
+            "matches": 8,
+            "predicted": 62.9,
+            "actual": 62.5
+          },
+          {
+            "range": "70\u2013100%",
+            "matches": 1,
+            "predicted": 91.8,
+            "actual": 0.0
+          }
+        ]
+      },
+      "outcome": {
+        "label": "Match result (favourite)",
+        "matches": 759,
+        "accuracy": 49.4
+      }
+    },
+    "seasons": {
+      "epl_2024": {
+        "matches": 379,
+        "strategies": {
+          "tight": {
+            "bets": 379,
+            "wins": 284,
+            "hit_rate": 74.9,
+            "gameweeks": 38,
+            "perfect_gws": 0,
+            "gws_80_plus": 20,
+            "worst_gw_rate": 40.0,
+            "by_pick": {
+              "Over 7.5": {
+                "bets": 186,
+                "wins": 140,
+                "hit_rate": 75.3,
+                "base_rate": 76.3
+              },
+              "Over 8.5": {
+                "bets": 114,
+                "wins": 82,
+                "hit_rate": 71.9,
+                "base_rate": 69.4
+              },
+              "Under 11.5": {
+                "bets": 12,
+                "wins": 10,
+                "hit_rate": 83.3,
+                "base_rate": 67.8
+              },
+              "Under 12.5": {
+                "bets": 67,
+                "wins": 52,
+                "hit_rate": 77.6,
+                "base_rate": 74.7
+              }
+            }
+          },
+          "classic": {
+            "bets": 379,
+            "wins": 282,
+            "hit_rate": 74.4,
+            "gameweeks": 38,
+            "perfect_gws": 2,
+            "gws_80_plus": 19,
+            "worst_gw_rate": 40.0,
+            "by_pick": {
+              "Over 7.5": {
+                "bets": 151,
+                "wins": 111,
+                "hit_rate": 73.5,
+                "base_rate": 76.3
+              },
+              "Over 8.5": {
+                "bets": 166,
+                "wins": 123,
+                "hit_rate": 74.1,
+                "base_rate": 69.4
+              },
+              "Under 11.5": {
+                "bets": 62,
+                "wins": 48,
+                "hit_rate": 77.4,
+                "base_rate": 67.8
+              }
+            }
+          }
+        },
+        "accas": {
+          "ultimate": {
+            "accas": 36,
+            "won": 15,
+            "legs": 108,
+            "legs_won": 84,
+            "win_rate": 41.7,
+            "leg_hit_rate": 77.8,
+            "fair_odds": 2.113
+          },
+          "corner": {
+            "accas": 38,
+            "won": 20,
+            "legs": 114,
+            "legs_won": 94,
+            "win_rate": 52.6,
+            "leg_hit_rate": 82.5,
+            "fair_odds": 2.352
+          }
+        },
+        "goal_tips": {
+          "bets": 379,
+          "wins": 283,
+          "hit_rate": 74.7,
+          "gameweeks": 38,
+          "perfect_gws": 2,
+          "gws_80_plus": 22,
+          "worst_gw_rate": 40.0,
+          "by_pick": {
+            "Over 1.5": {
+              "bets": 176,
+              "wins": 146,
+              "hit_rate": 83.0,
+              "base_rate": 81.5
+            },
+            "Over 2.5": {
+              "bets": 22,
+              "wins": 13,
+              "hit_rate": 59.1,
+              "base_rate": 56.7
+            },
+            "Under 3.5": {
+              "bets": 181,
+              "wins": 124,
+              "hit_rate": 68.5,
+              "base_rate": 65.7
+            }
+          }
+        },
+        "goal_markets": {
+          "btts": {
+            "label": "Both teams to score",
+            "matches": 379,
+            "accuracy": 53.0,
+            "baseline_accuracy": 57.5,
+            "actual_rate": 57.5,
+            "avg_predicted": 49.3,
+            "brier": 0.2511,
+            "baseline_brier": 0.2443,
+            "calibration": [
+              {
+                "range": "0\u201340%",
+                "matches": 25,
+                "predicted": 33.5,
+                "actual": 56.0
+              },
+              {
+                "range": "40\u201350%",
+                "matches": 166,
+                "predicted": 45.9,
+                "actual": 54.2
+              },
+              {
+                "range": "50\u201360%",
+                "matches": 175,
+                "predicted": 53.8,
+                "actual": 62.3
+              },
+              {
+                "range": "60\u201370%",
+                "matches": 13,
+                "predicted": 61.3,
+                "actual": 38.5
+              }
+            ]
+          },
+          "o15": {
+            "label": "Over 1.5 goals",
+            "matches": 379,
+            "accuracy": 80.2,
+            "baseline_accuracy": 81.5,
+            "actual_rate": 81.5,
+            "avg_predicted": 71.7,
+            "brier": 0.1657,
+            "baseline_brier": 0.1506,
+            "calibration": [
+              {
+                "range": "0\u201340%",
+                "matches": 4,
+                "predicted": 31.2,
+                "actual": 100.0
+              },
+              {
+                "range": "40\u201350%",
+                "matches": 1,
+                "predicted": 49.1,
+                "actual": 100.0
+              },
+              {
+                "range": "50\u201360%",
+                "matches": 13,
+                "predicted": 56.6,
+                "actual": 76.9
+              },
+              {
+                "range": "60\u201370%",
+                "matches": 108,
+                "predicted": 66.7,
+                "actual": 79.6
+              },
+              {
+                "range": "70\u2013100%",
+                "matches": 253,
+                "predicted": 75.3,
+                "actual": 82.2
+              }
+            ]
+          },
+          "o25": {
+            "label": "Over 2.5 goals",
+            "matches": 379,
+            "accuracy": 50.4,
+            "baseline_accuracy": 56.7,
+            "actual_rate": 56.7,
+            "avg_predicted": 46.0,
+            "brier": 0.257,
+            "baseline_brier": 0.2455,
+            "calibration": [
+              {
+                "range": "0\u201340%",
+                "matches": 65,
+                "predicted": 33.6,
+                "actual": 49.2
+              },
+              {
+                "range": "40\u201350%",
+                "matches": 187,
+                "predicted": 44.8,
+                "actual": 56.7
+              },
+              {
+                "range": "50\u201360%",
+                "matches": 120,
+                "predicted": 53.5,
+                "actual": 60.8
+              },
+              {
+                "range": "60\u201370%",
+                "matches": 7,
+                "predicted": 62.9,
+                "actual": 57.1
+              }
+            ]
+          },
+          "outcome": {
+            "label": "Match result (favourite)",
+            "matches": 379,
+            "accuracy": 50.4
+          }
+        },
+        "gameweeks": [
+          {
+            "gw": 1,
+            "matches": 9,
+            "goal_tips": [
+              9,
+              9
+            ],
+            "corner_tips": [
+              5,
+              9
+            ],
+            "ultimate_acca": null,
+            "corner_acca": false
+          },
+          {
+            "gw": 2,
+            "matches": 10,
+            "goal_tips": [
+              7,
+              10
+            ],
+            "corner_tips": [
+              7,
+              10
+            ],
+            "ultimate_acca": null,
+            "corner_acca": true
+          },
+          {
+            "gw": 3,
+            "matches": 10,
+            "goal_tips": [
+              8,
+              10
+            ],
+            "corner_tips": [
+              7,
+              10
+            ],
+            "ultimate_acca": true,
+            "corner_acca": false
+          },
+          {
+            "gw": 4,
+            "matches": 10,
+            "goal_tips": [
+              7,
+              10
+            ],
+            "corner_tips": [
+              7,
+              10
+            ],
+            "ultimate_acca": false,
+            "corner_acca": true
+          },
+          {
+            "gw": 5,
+            "matches": 10,
+            "goal_tips": [
+              7,
+              10
+            ],
+            "corner_tips": [
+              7,
+              10
+            ],
+            "ultimate_acca": true,
+            "corner_acca": true
+          },
+          {
+            "gw": 6,
+            "matches": 10,
+            "goal_tips": [
+              5,
+              10
+            ],
+            "corner_tips": [
+              8,
+              10
+            ],
+            "ultimate_acca": true,
+            "corner_acca": false
+          },
+          {
+            "gw": 7,
+            "matches": 10,
+            "goal_tips": [
+              8,
+              10
+            ],
+            "corner_tips": [
+              9,
+              10
+            ],
+            "ultimate_acca": false,
+            "corner_acca": false
+          },
+          {
+            "gw": 8,
+            "matches": 10,
+            "goal_tips": [
+              8,
+              10
+            ],
+            "corner_tips": [
+              8,
+              10
+            ],
+            "ultimate_acca": false,
+            "corner_acca": false
+          },
+          {
+            "gw": 9,
+            "matches": 10,
+            "goal_tips": [
+              6,
+              10
+            ],
+            "corner_tips": [
+              7,
+              10
+            ],
+            "ultimate_acca": false,
+            "corner_acca": false
+          },
+          {
+            "gw": 10,
+            "matches": 10,
+            "goal_tips": [
+              9,
+              10
+            ],
+            "corner_tips": [
+              9,
+              10
+            ],
+            "ultimate_acca": true,
+            "corner_acca": false
+          },
+          {
+            "gw": 11,
+            "matches": 10,
+            "goal_tips": [
+              9,
+              10
+            ],
+            "corner_tips": [
+              8,
+              10
+            ],
+            "ultimate_acca": true,
+            "corner_acca": true
+          },
+          {
+            "gw": 12,
+            "matches": 10,
+            "goal_tips": [
+              7,
+              10
+            ],
+            "corner_tips": [
+              8,
+              10
+            ],
+            "ultimate_acca": true,
+            "corner_acca": true
+          },
+          {
+            "gw": 13,
+            "matches": 10,
+            "goal_tips": [
+              9,
+              10
+            ],
+            "corner_tips": [
+              8,
+              10
+            ],
+            "ultimate_acca": true,
+            "corner_acca": true
+          },
+          {
+            "gw": 14,
+            "matches": 10,
+            "goal_tips": [
+              5,
+              10
+            ],
+            "corner_tips": [
+              8,
+              10
+            ],
+            "ultimate_acca": false,
+            "corner_acca": false
+          },
+          {
+            "gw": 15,
+            "matches": 10,
+            "goal_tips": [
+              8,
+              10
+            ],
+            "corner_tips": [
+              8,
+              10
+            ],
+            "ultimate_acca": false,
+            "corner_acca": false
+          },
+          {
+            "gw": 16,
+            "matches": 10,
+            "goal_tips": [
+              9,
+              10
+            ],
+            "corner_tips": [
+              7,
+              10
+            ],
+            "ultimate_acca": false,
+            "corner_acca": false
+          },
+          {
+            "gw": 17,
+            "matches": 10,
+            "goal_tips": [
+              8,
+              10
+            ],
+            "corner_tips": [
+              8,
+              10
+            ],
+            "ultimate_acca": false,
+            "corner_acca": true
+          },
+          {
+            "gw": 18,
+            "matches": 10,
+            "goal_tips": [
+              6,
+              10
+            ],
+            "corner_tips": [
+              4,
+              10
+            ],
+            "ultimate_acca": true,
+            "corner_acca": true
+          },
+          {
+            "gw": 19,
+            "matches": 10,
+            "goal_tips": [
+              10,
+              10
+            ],
+            "corner_tips": [
+              6,
+              10
+            ],
+            "ultimate_acca": true,
+            "corner_acca": true
+          },
+          {
+            "gw": 20,
+            "matches": 10,
+            "goal_tips": [
+              9,
+              10
+            ],
+            "corner_tips": [
+              7,
+              10
+            ],
+            "ultimate_acca": false,
+            "corner_acca": false
+          },
+          {
+            "gw": 21,
+            "matches": 10,
+            "goal_tips": [
+              9,
+              10
+            ],
+            "corner_tips": [
+              7,
+              10
+            ],
+            "ultimate_acca": true,
+            "corner_acca": false
+          },
+          {
+            "gw": 22,
+            "matches": 10,
+            "goal_tips": [
+              5,
+              10
+            ],
+            "corner_tips": [
+              9,
+              10
+            ],
+            "ultimate_acca": true,
+            "corner_acca": true
+          },
+          {
+            "gw": 23,
+            "matches": 10,
+            "goal_tips": [
+              8,
+              10
+            ],
+            "corner_tips": [
+              7,
+              10
+            ],
+            "ultimate_acca": true,
+            "corner_acca": true
+          },
+          {
+            "gw": 24,
+            "matches": 10,
+            "goal_tips": [
+              6,
+              10
+            ],
+            "corner_tips": [
+              7,
+              10
+            ],
+            "ultimate_acca": false,
+            "corner_acca": true
+          },
+          {
+            "gw": 25,
+            "matches": 10,
+            "goal_tips": [
+              8,
+              10
+            ],
+            "corner_tips": [
+              9,
+              10
+            ],
+            "ultimate_acca": false,
+            "corner_acca": true
+          },
+          {
+            "gw": 26,
+            "matches": 10,
+            "goal_tips": [
+              6,
+              10
+            ],
+            "corner_tips": [
+              8,
+              10
+            ],
+            "ultimate_acca": false,
+            "corner_acca": false
+          },
+          {
+            "gw": 27,
+            "matches": 10,
+            "goal_tips": [
+              6,
+              10
+            ],
+            "corner_tips": [
+              7,
+              10
+            ],
+            "ultimate_acca": false,
+            "corner_acca": true
+          },
+          {
+            "gw": 28,
+            "matches": 10,
+            "goal_tips": [
+              7,
+              10
+            ],
+            "corner_tips": [
+              8,
+              10
+            ],
+            "ultimate_acca": true,
+            "corner_acca": true
+          },
+          {
+            "gw": 29,
+            "matches": 10,
+            "goal_tips": [
+              8,
+              10
+            ],
+            "corner_tips": [
+              8,
+              10
+            ],
+            "ultimate_acca": true,
+            "corner_acca": false
+          },
+          {
+            "gw": 30,
+            "matches": 10,
+            "goal_tips": [
+              8,
+              10
+            ],
+            "corner_tips": [
+              7,
+              10
+            ],
+            "ultimate_acca": false,
+            "corner_acca": true
+          },
+          {
+            "gw": 31,
+            "matches": 10,
+            "goal_tips": [
+              8,
+              10
+            ],
+            "corner_tips": [
+              7,
+              10
+            ],
+            "ultimate_acca": false,
+            "corner_acca": false
+          },
+          {
+            "gw": 32,
+            "matches": 10,
+            "goal_tips": [
+              6,
+              10
+            ],
+            "corner_tips": [
+              8,
+              10
+            ],
+            "ultimate_acca": false,
+            "corner_acca": false
+          },
+          {
+            "gw": 33,
+            "matches": 10,
+            "goal_tips": [
+              7,
+              10
+            ],
+            "corner_tips": [
+              8,
+              10
+            ],
+            "ultimate_acca": false,
+            "corner_acca": true
+          },
+          {
+            "gw": 34,
+            "matches": 10,
+            "goal_tips": [
+              9,
+              10
+            ],
+            "corner_tips": [
+              9,
+              10
+            ],
+            "ultimate_acca": true,
+            "corner_acca": true
+          },
+          {
+            "gw": 35,
+            "matches": 10,
+            "goal_tips": [
+              8,
+              10
+            ],
+            "corner_tips": [
+              5,
+              10
+            ],
+            "ultimate_acca": false,
+            "corner_acca": false
+          },
+          {
+            "gw": 36,
+            "matches": 10,
+            "goal_tips": [
+              4,
+              10
+            ],
+            "corner_tips": [
+              9,
+              10
+            ],
+            "ultimate_acca": false,
+            "corner_acca": true
+          },
+          {
+            "gw": 37,
+            "matches": 10,
+            "goal_tips": [
+              8,
+              10
+            ],
+            "corner_tips": [
+              7,
+              10
+            ],
+            "ultimate_acca": false,
+            "corner_acca": false
+          },
+          {
+            "gw": 38,
+            "matches": 10,
+            "goal_tips": [
+              8,
+              10
+            ],
+            "corner_tips": [
+              8,
+              10
+            ],
+            "ultimate_acca": false,
+            "corner_acca": true
+          }
+        ]
+      },
+      "epl_2025": {
+        "matches": 380,
+        "strategies": {
+          "tight": {
+            "bets": 380,
+            "wins": 292,
+            "hit_rate": 76.8,
+            "gameweeks": 40,
+            "perfect_gws": 2,
+            "gws_80_plus": 25,
+            "worst_gw_rate": 22.2,
+            "by_pick": {
+              "Over 7.5": {
+                "bets": 140,
+                "wins": 104,
+                "hit_rate": 74.3,
+                "base_rate": 75.3
+              },
+              "Over 8.5": {
+                "bets": 43,
+                "wins": 34,
+                "hit_rate": 79.1,
+                "base_rate": 66.1
+              },
+              "Under 11.5": {
+                "bets": 83,
+                "wins": 62,
+                "hit_rate": 74.7,
+                "base_rate": 68.9
+              },
+              "Under 12.5": {
+                "bets": 114,
+                "wins": 92,
+                "hit_rate": 80.7,
+                "base_rate": 78.4
+              }
+            }
+          },
+          "classic": {
+            "bets": 380,
+            "wins": 277,
+            "hit_rate": 72.9,
+            "gameweeks": 40,
+            "perfect_gws": 1,
+            "gws_80_plus": 22,
+            "worst_gw_rate": 22.2,
+            "by_pick": {
+              "Over 7.5": {
+                "bets": 123,
+                "wins": 93,
+                "hit_rate": 75.6,
+                "base_rate": 75.3
+              },
+              "Over 8.5": {
+                "bets": 75,
+                "wins": 52,
+                "hit_rate": 69.3,
+                "base_rate": 66.1
+              },
+              "Under 11.5": {
+                "bets": 182,
+                "wins": 132,
+                "hit_rate": 72.5,
+                "base_rate": 68.9
+              }
+            }
+          }
+        },
+        "accas": {
+          "ultimate": {
+            "accas": 40,
+            "won": 25,
+            "legs": 120,
+            "legs_won": 98,
+            "win_rate": 62.5,
+            "leg_hit_rate": 81.7,
+            "fair_odds": 2.141
+          },
+          "corner": {
+            "accas": 40,
+            "won": 20,
+            "legs": 120,
+            "legs_won": 94,
+            "win_rate": 50.0,
+            "leg_hit_rate": 78.3,
+            "fair_odds": 2.16
+          }
+        },
+        "goal_tips": {
+          "bets": 380,
+          "wins": 290,
+          "hit_rate": 76.3,
+          "gameweeks": 40,
+          "perfect_gws": 2,
+          "gws_80_plus": 16,
+          "worst_gw_rate": 50.0,
+          "by_pick": {
+            "Over 1.5": {
+              "bets": 137,
+              "wins": 117,
+              "hit_rate": 85.4,
+              "base_rate": 78.9
+            },
+            "Over 2.5": {
+              "bets": 3,
+              "wins": 1,
+              "hit_rate": 33.3,
+              "base_rate": 55.0
+            },
+            "Under 3.5": {
+              "bets": 240,
+              "wins": 172,
+              "hit_rate": 71.7,
+              "base_rate": 71.6
+            }
+          }
+        },
+        "goal_markets": {
+          "btts": {
+            "label": "Both teams to score",
+            "matches": 380,
+            "accuracy": 49.5,
+            "baseline_accuracy": 56.1,
+            "actual_rate": 56.1,
+            "avg_predicted": 47.0,
+            "brier": 0.2582,
+            "baseline_brier": 0.2463,
+            "calibration": [
+              {
+                "range": "0\u201340%",
+                "matches": 45,
+                "predicted": 36.9,
+                "actual": 51.1
+              },
+              {
+                "range": "40\u201350%",
+                "matches": 216,
+                "predicted": 45.5,
+                "actual": 55.6
+              },
+              {
+                "range": "50\u201360%",
+                "matches": 116,
+                "predicted": 53.1,
+                "actual": 60.3
+              },
+              {
+                "range": "60\u201370%",
+                "matches": 2,
+                "predicted": 62.5,
+                "actual": 0.0
+              },
+              {
+                "range": "70\u2013100%",
+                "matches": 1,
+                "predicted": 88.0,
+                "actual": 0.0
+              }
+            ]
+          },
+          "o15": {
+            "label": "Over 1.5 goals",
+            "matches": 380,
+            "accuracy": 78.7,
+            "baseline_accuracy": 78.9,
+            "actual_rate": 78.9,
+            "avg_predicted": 69.4,
+            "brier": 0.1777,
+            "baseline_brier": 0.1662,
+            "calibration": [
+              {
+                "range": "40\u201350%",
+                "matches": 1,
+                "predicted": 47.5,
+                "actual": 100.0
+              },
+              {
+                "range": "50\u201360%",
+                "matches": 25,
+                "predicted": 56.5,
+                "actual": 80.0
+              },
+              {
+                "range": "60\u201370%",
+                "matches": 172,
+                "predicted": 66.1,
+                "actual": 76.2
+              },
+              {
+                "range": "70\u2013100%",
+                "matches": 182,
+                "predicted": 74.4,
+                "actual": 81.3
+              }
+            ]
+          },
+          "o25": {
+            "label": "Over 2.5 goals",
+            "matches": 380,
+            "accuracy": 44.7,
+            "baseline_accuracy": 55.0,
+            "actual_rate": 55.0,
+            "avg_predicted": 43.1,
+            "brier": 0.2684,
+            "baseline_brier": 0.2475,
+            "calibration": [
+              {
+                "range": "0\u201340%",
+                "matches": 129,
+                "predicted": 35.2,
+                "actual": 52.7
+              },
+              {
+                "range": "40\u201350%",
+                "matches": 180,
+                "predicted": 44.6,
+                "actual": 58.9
+              },
+              {
+                "range": "50\u201360%",
+                "matches": 69,
+                "predicted": 52.9,
+                "actual": 49.3
+              },
+              {
+                "range": "60\u201370%",
+                "matches": 1,
+                "predicted": 62.9,
+                "actual": 100.0
+              },
+              {
+                "range": "70\u2013100%",
+                "matches": 1,
+                "predicted": 91.8,
+                "actual": 0.0
+              }
+            ]
+          },
+          "outcome": {
+            "label": "Match result (favourite)",
+            "matches": 380,
+            "accuracy": 48.4
+          }
+        },
+        "gameweeks": [
+          {
+            "gw": 1,
+            "matches": 10,
+            "goal_tips": [
+              9,
+              10
+            ],
+            "corner_tips": [
+              8,
+              10
+            ],
+            "ultimate_acca": false,
+            "corner_acca": false
+          },
+          {
+            "gw": 2,
+            "matches": 9,
+            "goal_tips": [
+              6,
+              9
+            ],
+            "corner_tips": [
+              6,
+              9
+            ],
+            "ultimate_acca": false,
+            "corner_acca": false
+          },
+          {
+            "gw": 3,
+            "matches": 10,
+            "goal_tips": [
+              7,
+              10
+            ],
+            "corner_tips": [
+              8,
+              10
+            ],
+            "ultimate_acca": true,
+            "corner_acca": true
+          },
+          {
+            "gw": 4,
+            "matches": 10,
+            "goal_tips": [
+              8,
+              10
+            ],
+            "corner_tips": [
+              8,
+              10
+            ],
+            "ultimate_acca": false,
+            "corner_acca": false
+          },
+          {
+            "gw": 5,
+            "matches": 10,
+            "goal_tips": [
+              8,
+              10
+            ],
+            "corner_tips": [
+              8,
+              10
+            ],
+            "ultimate_acca": true,
+            "corner_acca": true
+          },
+          {
+            "gw": 6,
+            "matches": 9,
+            "goal_tips": [
+              6,
+              9
+            ],
+            "corner_tips": [
+              6,
+              9
+            ],
+            "ultimate_acca": true,
+            "corner_acca": true
+          },
+          {
+            "gw": 7,
+            "matches": 10,
+            "goal_tips": [
+              9,
+              10
+            ],
+            "corner_tips": [
+              8,
+              10
+            ],
+            "ultimate_acca": true,
+            "corner_acca": false
+          },
+          {
+            "gw": 8,
+            "matches": 9,
+            "goal_tips": [
+              7,
+              9
+            ],
+            "corner_tips": [
+              7,
+              9
+            ],
+            "ultimate_acca": false,
+            "corner_acca": false
+          },
+          {
+            "gw": 9,
+            "matches": 10,
+            "goal_tips": [
+              10,
+              10
+            ],
+            "corner_tips": [
+              6,
+              10
+            ],
+            "ultimate_acca": true,
+            "corner_acca": false
+          },
+          {
+            "gw": 10,
+            "matches": 9,
+            "goal_tips": [
+              7,
+              9
+            ],
+            "corner_tips": [
+              7,
+              9
+            ],
+            "ultimate_acca": false,
+            "corner_acca": false
+          },
+          {
+            "gw": 11,
+            "matches": 10,
+            "goal_tips": [
+              6,
+              10
+            ],
+            "corner_tips": [
+              8,
+              10
+            ],
+            "ultimate_acca": true,
+            "corner_acca": false
+          },
+          {
+            "gw": 12,
+            "matches": 9,
+            "goal_tips": [
+              6,
+              9
+            ],
+            "corner_tips": [
+              8,
+              9
+            ],
+            "ultimate_acca": true,
+            "corner_acca": true
+          },
+          {
+            "gw": 13,
+            "matches": 10,
+            "goal_tips": [
+              7,
+              10
+            ],
+            "corner_tips": [
+              9,
+              10
+            ],
+            "ultimate_acca": true,
+            "corner_acca": true
+          },
+          {
+            "gw": 14,
+            "matches": 10,
+            "goal_tips": [
+              7,
+              10
+            ],
+            "corner_tips": [
+              9,
+              10
+            ],
+            "ultimate_acca": true,
+            "corner_acca": true
+          },
+          {
+            "gw": 15,
+            "matches": 10,
+            "goal_tips": [
+              8,
+              10
+            ],
+            "corner_tips": [
+              8,
+              10
+            ],
+            "ultimate_acca": true,
+            "corner_acca": true
+          },
+          {
+            "gw": 16,
+            "matches": 8,
+            "goal_tips": [
+              5,
+              8
+            ],
+            "corner_tips": [
+              7,
+              8
+            ],
+            "ultimate_acca": true,
+            "corner_acca": true
+          },
+          {
+            "gw": 17,
+            "matches": 10,
+            "goal_tips": [
+              8,
+              10
+            ],
+            "corner_tips": [
+              8,
+              10
+            ],
+            "ultimate_acca": true,
+            "corner_acca": true
+          },
+          {
+            "gw": 18,
+            "matches": 9,
+            "goal_tips": [
+              7,
+              9
+            ],
+            "corner_tips": [
+              6,
+              9
+            ],
+            "ultimate_acca": false,
+            "corner_acca": false
+          },
+          {
+            "gw": 19,
+            "matches": 10,
+            "goal_tips": [
+              9,
+              10
+            ],
+            "corner_tips": [
+              5,
+              10
+            ],
+            "ultimate_acca": false,
+            "corner_acca": false
+          },
+          {
+            "gw": 20,
+            "matches": 10,
+            "goal_tips": [
+              7,
+              10
+            ],
+            "corner_tips": [
+              8,
+              10
+            ],
+            "ultimate_acca": false,
+            "corner_acca": true
+          },
+          {
+            "gw": 21,
+            "matches": 10,
+            "goal_tips": [
+              8,
+              10
+            ],
+            "corner_tips": [
+              9,
+              10
+            ],
+            "ultimate_acca": true,
+            "corner_acca": true
+          },
+          {
+            "gw": 22,
+            "matches": 9,
+            "goal_tips": [
+              7,
+              9
+            ],
+            "corner_tips": [
+              9,
+              9
+            ],
+            "ultimate_acca": true,
+            "corner_acca": true
+          },
+          {
+            "gw": 23,
+            "matches": 10,
+            "goal_tips": [
+              9,
+              10
+            ],
+            "corner_tips": [
+              7,
+              10
+            ],
+            "ultimate_acca": true,
+            "corner_acca": false
+          },
+          {
+            "gw": 24,
+            "matches": 9,
+            "goal_tips": [
+              7,
+              9
+            ],
+            "corner_tips": [
+              8,
+              9
+            ],
+            "ultimate_acca": true,
+            "corner_acca": true
+          },
+          {
+            "gw": 25,
+            "matches": 9,
+            "goal_tips": [
+              7,
+              9
+            ],
+            "corner_tips": [
+              7,
+              9
+            ],
+            "ultimate_acca": false,
+            "corner_acca": false
+          },
+          {
+            "gw": 26,
+            "matches": 10,
+            "goal_tips": [
+              7,
+              10
+            ],
+            "corner_tips": [
+              7,
+              10
+            ],
+            "ultimate_acca": true,
+            "corner_acca": true
+          },
+          {
+            "gw": 27,
+            "matches": 10,
+            "goal_tips": [
+              9,
+              10
+            ],
+            "corner_tips": [
+              9,
+              10
+            ],
+            "ultimate_acca": true,
+            "corner_acca": false
+          },
+          {
+            "gw": 28,
+            "matches": 9,
+            "goal_tips": [
+              7,
+              9
+            ],
+            "corner_tips": [
+              8,
+              9
+            ],
+            "ultimate_acca": true,
+            "corner_acca": true
+          },
+          {
+            "gw": 29,
+            "matches": 10,
+            "goal_tips": [
+              5,
+              10
+            ],
+            "corner_tips": [
+              10,
+              10
+            ],
+            "ultimate_acca": true,
+            "corner_acca": true
+          },
+          {
+            "gw": 30,
+            "matches": 10,
+            "goal_tips": [
+              7,
+              10
+            ],
+            "corner_tips": [
+              8,
+              10
+            ],
+            "ultimate_acca": false,
+            "corner_acca": true
+          },
+          {
+            "gw": 31,
+            "matches": 9,
+            "goal_tips": [
+              6,
+              9
+            ],
+            "corner_tips": [
+              8,
+              9
+            ],
+            "ultimate_acca": true,
+            "corner_acca": true
+          },
+          {
+            "gw": 32,
+            "matches": 9,
+            "goal_tips": [
+              7,
+              9
+            ],
+            "corner_tips": [
+              8,
+              9
+            ],
+            "ultimate_acca": true,
+            "corner_acca": false
+          },
+          {
+            "gw": 33,
+            "matches": 10,
+            "goal_tips": [
+              8,
+              10
+            ],
+            "corner_tips": [
+              8,
+              10
+            ],
+            "ultimate_acca": true,
+            "corner_acca": true
+          },
+          {
+            "gw": 34,
+            "matches": 10,
+            "goal_tips": [
+              8,
+              10
+            ],
+            "corner_tips": [
+              6,
+              10
+            ],
+            "ultimate_acca": false,
+            "corner_acca": false
+          },
+          {
+            "gw": 35,
+            "matches": 10,
+            "goal_tips": [
+              6,
+              10
+            ],
+            "corner_tips": [
+              5,
+              10
+            ],
+            "ultimate_acca": false,
+            "corner_acca": false
+          },
+          {
+            "gw": 36,
+            "matches": 10,
+            "goal_tips": [
+              9,
+              10
+            ],
+            "corner_tips": [
+              7,
+              10
+            ],
+            "ultimate_acca": true,
+            "corner_acca": true
+          },
+          {
+            "gw": 37,
+            "matches": 10,
+            "goal_tips": [
+              6,
+              10
+            ],
+            "corner_tips": [
+              6,
+              10
+            ],
+            "ultimate_acca": false,
+            "corner_acca": false
+          },
+          {
+            "gw": 38,
+            "matches": 9,
+            "goal_tips": [
+              6,
+              9
+            ],
+            "corner_tips": [
+              2,
+              9
+            ],
+            "ultimate_acca": false,
+            "corner_acca": false
+          },
+          {
+            "gw": 39,
+            "matches": 10,
+            "goal_tips": [
+              9,
+              10
+            ],
+            "corner_tips": [
+              8,
+              10
+            ],
+            "ultimate_acca": false,
+            "corner_acca": false
+          },
+          {
+            "gw": 40,
+            "matches": 5,
+            "goal_tips": [
+              5,
+              5
+            ],
+            "corner_tips": [
+              4,
+              5
+            ],
+            "ultimate_acca": true,
+            "corner_acca": false
+          }
+        ]
+      },
+      "epl_2026": {
+        "matches": 80,
+        "strategies": {
+          "tight": {
+            "bets": 80,
+            "wins": 59,
+            "hit_rate": 73.8,
+            "gameweeks": 8,
+            "perfect_gws": 0,
+            "gws_80_plus": 4,
+            "worst_gw_rate": 60.0,
+            "by_pick": {
+              "Over 7.5": {
+                "bets": 20,
+                "wins": 16,
+                "hit_rate": 80.0,
+                "base_rate": 71.2
+              },
+              "Over 8.5": {
+                "bets": 5,
+                "wins": 1,
+                "hit_rate": 20.0,
+                "base_rate": 52.5
+              },
+              "Under 11.5": {
+                "bets": 28,
+                "wins": 22,
+                "hit_rate": 78.6,
+                "base_rate": 75.0
+              },
+              "Under 12.5": {
+                "bets": 27,
+                "wins": 20,
+                "hit_rate": 74.1,
+                "base_rate": 82.5
+              }
+            }
+          },
+          "classic": {
+            "bets": 80,
+            "wins": 56,
+            "hit_rate": 70.0,
+            "gameweeks": 8,
+            "perfect_gws": 0,
+            "gws_80_plus": 2,
+            "worst_gw_rate": 60.0,
+            "by_pick": {
+              "Over 7.5": {
+                "bets": 17,
+                "wins": 14,
+                "hit_rate": 82.4,
+                "base_rate": 71.2
+              },
+              "Over 8.5": {
+                "bets": 13,
+                "wins": 5,
+                "hit_rate": 38.5,
+                "base_rate": 52.5
+              },
+              "Under 11.5": {
+                "bets": 50,
+                "wins": 37,
+                "hit_rate": 74.0,
+                "base_rate": 75.0
+              }
+            }
+          }
+        },
+        "accas": {
+          "ultimate": {
+            "accas": 8,
+            "won": 4,
+            "legs": 24,
+            "legs_won": 20,
+            "win_rate": 50.0,
+            "leg_hit_rate": 83.3,
+            "fair_odds": 2.193
+          },
+          "corner": {
+            "accas": 8,
+            "won": 3,
+            "legs": 24,
+            "legs_won": 18,
+            "win_rate": 37.5,
+            "leg_hit_rate": 75.0,
+            "fair_odds": 2.062
+          }
+        },
+        "goal_tips": {
+          "bets": 80,
+          "wins": 51,
+          "hit_rate": 63.7,
+          "gameweeks": 8,
+          "perfect_gws": 0,
+          "gws_80_plus": 1,
+          "worst_gw_rate": 40.0,
+          "by_pick": {
+            "Over 1.5": {
+              "bets": 34,
+              "wins": 26,
+              "hit_rate": 76.5,
+              "base_rate": 76.2
+            },
+            "Over 2.5": {
+              "bets": 26,
+              "wins": 11,
+              "hit_rate": 42.3,
+              "base_rate": 50.0
+            },
+            "Under 3.5": {
+              "bets": 20,
+              "wins": 14,
+              "hit_rate": 70.0,
+              "base_rate": 68.8
+            }
+          }
+        },
+        "goal_markets": {
+          "btts": {
+            "label": "Both teams to score",
+            "matches": 80,
+            "accuracy": 57.5,
+            "baseline_accuracy": 50.0,
+            "actual_rate": 50.0,
+            "avg_predicted": 53.8,
+            "brier": 0.2575,
+            "baseline_brier": 0.25,
+            "calibration": [
+              {
+                "range": "0\u201340%",
+                "matches": 3,
+                "predicted": 37.3,
+                "actual": 33.3
+              },
+              {
+                "range": "40\u201350%",
+                "matches": 21,
+                "predicted": 44.9,
+                "actual": 38.1
+              },
+              {
+                "range": "50\u201360%",
+                "matches": 37,
+                "predicted": 55.1,
+                "actual": 64.9
+              },
+              {
+                "range": "60\u201370%",
+                "matches": 18,
+                "predicted": 63.2,
+                "actual": 38.9
+              },
+              {
+                "range": "70\u2013100%",
+                "matches": 1,
+                "predicted": 70.1,
+                "actual": 0.0
+              }
+            ]
+          },
+          "o15": {
+            "label": "Over 1.5 goals",
+            "matches": 80,
+            "accuracy": 76.2,
+            "baseline_accuracy": 76.2,
+            "actual_rate": 76.2,
+            "avg_predicted": 76.1,
+            "brier": 0.1842,
+            "baseline_brier": 0.1811,
+            "calibration": [
+              {
+                "range": "50\u201360%",
+                "matches": 4,
+                "predicted": 58.5,
+                "actual": 100.0
+              },
+              {
+                "range": "60\u201370%",
+                "matches": 11,
+                "predicted": 66.5,
+                "actual": 63.6
+              },
+              {
+                "range": "70\u2013100%",
+                "matches": 65,
+                "predicted": 78.8,
+                "actual": 76.9
+              }
+            ]
+          },
+          "o25": {
+            "label": "Over 2.5 goals",
+            "matches": 80,
+            "accuracy": 50.0,
+            "baseline_accuracy": 50.0,
+            "actual_rate": 50.0,
+            "avg_predicted": 52.0,
+            "brier": 0.266,
+            "baseline_brier": 0.25,
+            "calibration": [
+              {
+                "range": "0\u201340%",
+                "matches": 9,
+                "predicted": 33.9,
+                "actual": 66.7
+              },
+              {
+                "range": "40\u201350%",
+                "matches": 23,
+                "predicted": 45.7,
+                "actual": 43.5
+              },
+              {
+                "range": "50\u201360%",
+                "matches": 30,
+                "predicted": 55.2,
+                "actual": 56.7
+              },
+              {
+                "range": "60\u201370%",
+                "matches": 17,
+                "predicted": 63.6,
+                "actual": 41.2
+              },
+              {
+                "range": "70\u2013100%",
+                "matches": 1,
+                "predicted": 70.3,
+                "actual": 0.0
+              }
+            ]
+          },
+          "outcome": {
+            "label": "Match result (favourite)",
+            "matches": 80,
+            "accuracy": 45.0
+          }
+        },
+        "gameweeks": [
+          {
+            "gw": 1,
+            "matches": 10,
+            "goal_tips": [
+              8,
+              10
+            ],
+            "corner_tips": [
+              9,
+              10
+            ],
+            "ultimate_acca": true,
+            "corner_acca": false
+          },
+          {
+            "gw": 2,
+            "matches": 10,
+            "goal_tips": [
+              7,
+              10
+            ],
+            "corner_tips": [
+              8,
+              10
+            ],
+            "ultimate_acca": true,
+            "corner_acca": false
+          },
+          {
+            "gw": 3,
+            "matches": 10,
+            "goal_tips": [
+              6,
+              10
+            ],
+            "corner_tips": [
+              7,
+              10
+            ],
+            "ultimate_acca": false,
+            "corner_acca": false
+          },
+          {
+            "gw": 4,
+            "matches": 10,
+            "goal_tips": [
+              7,
+              10
+            ],
+            "corner_tips": [
+              6,
+              10
+            ],
+            "ultimate_acca": false,
+            "corner_acca": true
+          },
+          {
+            "gw": 5,
+            "matches": 10,
+            "goal_tips": [
+              4,
+              10
+            ],
+            "corner_tips": [
+              8,
+              10
+            ],
+            "ultimate_acca": true,
+            "corner_acca": true
+          },
+          {
+            "gw": 6,
+            "matches": 10,
+            "goal_tips": [
+              7,
+              10
+            ],
+            "corner_tips": [
+              6,
+              10
+            ],
+            "ultimate_acca": false,
+            "corner_acca": false
+          },
+          {
+            "gw": 7,
+            "matches": 10,
+            "goal_tips": [
+              6,
+              10
+            ],
+            "corner_tips": [
+              7,
+              10
+            ],
+            "ultimate_acca": false,
+            "corner_acca": false
+          },
+          {
+            "gw": 8,
+            "matches": 10,
+            "goal_tips": [
+              6,
+              10
+            ],
+            "corner_tips": [
+              8,
+              10
+            ],
+            "ultimate_acca": true,
+            "corner_acca": true
+          }
+        ]
+      }
+    }
+  },
+  "strategies": {
+    "tight": {
+      "bets": 759,
+      "wins": 576,
+      "hit_rate": 75.9,
+      "gameweeks": 78,
+      "perfect_gws": 2,
+      "gws_80_plus": 45,
+      "worst_gw_rate": 22.2,
+      "by_pick": {
+        "Over 7.5": {
+          "bets": 326,
+          "wins": 244,
+          "hit_rate": 74.8,
+          "base_rate": 75.8
+        },
+        "Over 8.5": {
+          "bets": 157,
+          "wins": 116,
+          "hit_rate": 73.9,
+          "base_rate": 67.7
+        },
+        "Under 11.5": {
+          "bets": 95,
+          "wins": 72,
+          "hit_rate": 75.8,
+          "base_rate": 68.4
+        },
+        "Under 12.5": {
+          "bets": 181,
+          "wins": 144,
+          "hit_rate": 79.6,
+          "base_rate": 76.5
+        }
+      }
+    },
+    "classic": {
+      "bets": 759,
+      "wins": 559,
+      "hit_rate": 73.6,
+      "gameweeks": 78,
+      "perfect_gws": 3,
+      "gws_80_plus": 41,
+      "worst_gw_rate": 22.2,
+      "by_pick": {
+        "Over 7.5": {
+          "bets": 274,
+          "wins": 204,
+          "hit_rate": 74.5,
+          "base_rate": 75.8
+        },
+        "Over 8.5": {
+          "bets": 241,
+          "wins": 175,
+          "hit_rate": 72.6,
+          "base_rate": 67.7
+        },
+        "Under 11.5": {
+          "bets": 244,
+          "wins": 180,
+          "hit_rate": 73.8,
+          "base_rate": 68.4
+        }
+      }
+    }
+  }
+}

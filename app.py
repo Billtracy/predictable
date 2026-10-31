@@ -1,14 +1,26 @@
 import os
 import sys
 import re
-import math
-import uuid
 from flask import Flask, jsonify, request, send_from_directory
 from db.database import get_db
-from predictors.goals import predict_goals
-from predictors.corners import predict_corners
+from predictors.goals import predict_goals, goal_tip
+import json
+from predictors.acca import build_accas, grade_leg
+from predictors.corners import predict_corners, corner_tip, CORNER_STRATEGIES, DEFAULT_CORNER_STRATEGY
 
 app = Flask(__name__, static_folder='static')
+
+# Champions League: a separate model with its own database (ucl/), mounted at /ucl
+from ucl.web import ucl_bp
+app.register_blueprint(ucl_bp)
+
+@app.after_request
+def cache_static_images(response):
+    # Crests never change: let browsers keep them for 30 days instead of re-checking each visit
+    if request.path.startswith('/static/img/'):
+        response.headers['Cache-Control'] = 'public, max-age=2592000, immutable'
+    return response
+
 
 @app.route('/')
 def index():
@@ -21,6 +33,10 @@ def epl_page():
 @app.route('/calculator')
 def calculator_page():
     return send_from_directory('static', 'calculator.html')
+
+@app.route('/backtest')
+def backtest_page():
+    return send_from_directory('static', 'backtest.html')
 
 
 # ---------------------------------------------------------------------------
@@ -91,25 +107,43 @@ def _bet_won(bet_label, actual_total):
     return (actual_total > line) if direction == 'over' else (actual_total < line)
 
 
-def _grade_acca_leg(leg, fixtures_by_id):
-    """Grade a 3-word acca pick like 'Over 1.5 Goals' against the fixture's actual result."""
-    fx = fixtures_by_id.get(leg.get('match_id'))
-    if not fx or 'actual' not in fx:
-        return None
-    parts = leg['pick'].split()
-    if len(parts) != 3:
-        return None
-    direction, category = parts[0].lower(), parts[2].lower()
-    line = float(parts[1])
-    if category == 'goals':
-        total = fx['actual']['home_score'] + fx['actual']['away_score']
-    elif category == 'corners':
-        total = fx['actual']['corners']
-    else:
-        return None
-    if total is None:
-        return None
-    return (total > line) if direction == 'over' else (total < line)
+def _corner_strategy_arg():
+    """The ?corner_strategy= query param, or the default if missing/unknown."""
+    strategy = request.args.get('corner_strategy', DEFAULT_CORNER_STRATEGY)
+    return strategy if strategy in CORNER_STRATEGIES else DEFAULT_CORNER_STRATEGY
+
+
+CORNER_BACKTEST_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'corner_strategy_backtest.json')
+
+
+@app.route('/api/corner-strategies')
+def corner_strategies():
+    """Available corner tip strategies, plus backtest results if the comparison has been run."""
+    backtest = {}
+    if os.path.exists(CORNER_BACKTEST_FILE):
+        with open(CORNER_BACKTEST_FILE) as fh:
+            backtest = json.load(fh)
+    return jsonify({
+        'success': True,
+        'default': DEFAULT_CORNER_STRATEGY,
+        'strategies': [
+            {'id': key, 'label': s['label'], 'description': s['description'],
+             'backtest': backtest.get('strategies', {}).get(key)}
+            for key, s in CORNER_STRATEGIES.items()
+        ],
+        'backtest_meta': backtest.get('meta'),
+    })
+
+
+@app.route('/api/backtest')
+def backtest_results():
+    """Leak-free backtest results written by experiments/corner_strategy_compare.py."""
+    if not os.path.exists(CORNER_BACKTEST_FILE):
+        return jsonify({'success': False, 'error': 'No backtest yet. Run experiments/corner_strategy_compare.py.'})
+    with open(CORNER_BACKTEST_FILE) as fh:
+        results = json.load(fh)
+    return jsonify({'success': True, 'default_corner_strategy': DEFAULT_CORNER_STRATEGY,
+                    'corner_strategies': {k: s['label'] for k, s in CORNER_STRATEGIES.items()}, **results})
 
 
 @app.route('/api/epl/gameweek/<int:gw>')
@@ -117,6 +151,7 @@ def epl_gameweek_predictions(gw):
     """Return predictions for every fixture in a gameweek."""
     if gw < 1:
         return jsonify({'success': False, 'error': 'Invalid gameweek'})
+    strategy = _corner_strategy_arg()
 
     offset = (gw - 1) * EPL_MATCHES_PER_GW
 
@@ -173,20 +208,9 @@ def epl_gameweek_predictions(gw):
         score_str = f"{top_score[0]}–{top_score[1]}"
 
         total_exp = cp['results']['total_expected']
-        if total_exp < 9.0:
-            rec_bet = "Under 11.5"
-        elif total_exp < 10.0:
-            rec_bet = "Over 7.5"
-        else:
-            rec_bet = "Over 8.5"
+        rec_bet = corner_tip(strategy, total_exp, home_name, away_name)
 
-        total_goal_exp = gp['home_xg'] + gp['away_xg']
-        if total_goal_exp > 3.0:
-            rec_goal_bet = "Over 2.5"
-        elif total_goal_exp > 2.5:
-            rec_goal_bet = "Over 1.5"
-        else:
-            rec_goal_bet = "Under 3.5"
+        rec_goal_bet = goal_tip(gp['home_xg'] + gp['away_xg'])
 
         fixture = {
             'match_id': match['id'],
@@ -231,116 +255,19 @@ def epl_gameweek_predictions(gw):
 
         fixtures.append(fixture)
 
-    acc_legs = []
-    if fixtures:
-        # 1. Safest Goal Over (highest xG, > 2.50)
-        over_goal_cands = [f for f in fixtures if (f['goals']['home_xg'] + f['goals']['away_xg']) > 2.5]
-        if over_goal_cands:
-            best_goal_over = max(over_goal_cands, key=lambda f: f['goals']['home_xg'] + f['goals']['away_xg'])
-            acc_legs.append({
-                'match_id': best_goal_over['match_id'],
-                'match': f"{best_goal_over['home_team']} vs {best_goal_over['away_team']}",
-                'pick': "Over 1.5 Goals",
-                'reason': f"Highest xG ({round(best_goal_over['goals']['home_xg'] + best_goal_over['goals']['away_xg'], 2)})"
-            })
-            
-        # 2. Safest Corner Over (highest Exp Corners, >= 9.5)
-        over_corner_cands = [f for f in fixtures if f['corners']['total_expected'] >= 9.5]
-        if over_corner_cands:
-            best_corner_over = max(over_corner_cands, key=lambda f: f['corners']['total_expected'])
-            acc_legs.append({
-                'match_id': best_corner_over['match_id'],
-                'match': f"{best_corner_over['home_team']} vs {best_corner_over['away_team']}",
-                'pick': "Over 6.5 Corners",
-                'reason': f"High Expected Corners ({best_corner_over['corners']['total_expected']})"
-            })
-            
-        # 3. Safest Corner Under (lowest Exp Corners, < 9.0)
-        under_corner_cands = [f for f in fixtures if f['corners']['total_expected'] < 9.0]
-        if under_corner_cands:
-            best_corner_under = min(under_corner_cands, key=lambda f: f['corners']['total_expected'])
-            acc_legs.append({
-                'match_id': best_corner_under['match_id'],
-                'match': f"{best_corner_under['home_team']} vs {best_corner_under['away_team']}",
-                'pick': "Under 13.5 Corners",
-                'reason': f"Low Expected Corners ({best_corner_under['corners']['total_expected']})"
-            })
-            
-        # If we don't have 3 legs, fill with Goal Under (lowest xG, <= 2.5)
-        if len(acc_legs) < 3:
-            under_goal_cands = [f for f in fixtures if (f['goals']['home_xg'] + f['goals']['away_xg']) <= 2.5]
-            picked_matches = [leg['match'] for leg in acc_legs]
-            under_goal_cands = [f for f in under_goal_cands if f"{f['home_team']} vs {f['away_team']}" not in picked_matches]
-            if under_goal_cands:
-                best_goal_under = min(under_goal_cands, key=lambda f: f['goals']['home_xg'] + f['goals']['away_xg'])
-                acc_legs.append({
-                    'match_id': best_goal_under['match_id'],
-                    'match': f"{best_goal_under['home_team']} vs {best_goal_under['away_team']}",
-                    'pick': "Under 4.5 Goals",
-                    'reason': f"Lowest xG ({round(best_goal_under['goals']['home_xg'] + best_goal_under['goals']['away_xg'], 2)})"
-                })
-                
-        # If still missing, fill with the safest Under 12.5 corners available
-        if len(acc_legs) < 3:
-            under_c_cands2 = [f for f in fixtures if f['corners']['total_expected'] < 9.5]
-            picked_matches = [leg['match'] for leg in acc_legs]
-            under_c_cands2 = [f for f in under_c_cands2 if f"{f['home_team']} vs {f['away_team']}" not in picked_matches]
-            if under_c_cands2:
-                best_c2 = min(under_c_cands2, key=lambda f: f['corners']['total_expected'])
-                acc_legs.append({
-                    'match_id': best_c2['match_id'],
-                    'match': f"{best_c2['home_team']} vs {best_c2['away_team']}",
-                    'pick': "Under 12.5 Corners",
-                    'reason': f"Low Expected Corners ({best_c2['corners']['total_expected']})"
-                })
-                
-    acca = acc_legs[:3]
-
-    corner_acca_legs = []
-    if fixtures:
-        # Sort by total expected corners
-        sorted_by_corners = sorted(fixtures, key=lambda f: f['corners']['total_expected'])
-        
-        # 1. Safest Under
-        if len(sorted_by_corners) > 0:
-            c_under1 = sorted_by_corners[0]
-            corner_acca_legs.append({
-                'match_id': c_under1['match_id'],
-                'match': f"{c_under1['home_team']} vs {c_under1['away_team']}",
-                'pick': "Under 12.5 Corners",
-                'reason': f"Lowest Expected Corners ({c_under1['corners']['total_expected']})"
-            })
-            
-        # 2. 2nd Safest Under
-        if len(sorted_by_corners) > 1:
-            c_under2 = sorted_by_corners[1]
-            corner_acca_legs.append({
-                'match_id': c_under2['match_id'],
-                'match': f"{c_under2['home_team']} vs {c_under2['away_team']}",
-                'pick': "Under 12.5 Corners",
-                'reason': f"Low Expected Corners ({c_under2['corners']['total_expected']})"
-            })
-            
-        # 3. Safest Over
-        if len(sorted_by_corners) > 2:
-            c_over = sorted_by_corners[-1]
-            corner_acca_legs.append({
-                'match_id': c_over['match_id'],
-                'match': f"{c_over['home_team']} vs {c_over['away_team']}",
-                'pick': "Over 7.5 Corners",
-                'reason': f"Highest Expected Corners ({c_over['corners']['total_expected']})"
-            })
+    acca, corner_acca_legs = build_accas(fixtures)
 
     fixtures_by_id = {f['match_id']: f for f in fixtures}
     for leg in acca + corner_acca_legs:
-        leg['won'] = _grade_acca_leg(leg, fixtures_by_id)
+        leg['won'] = grade_leg(leg, fixtures_by_id)
 
-    return jsonify({'success': True, 'gameweek': gw, 'fixtures': fixtures, 'acca': acca, 'corner_acca': corner_acca_legs})
+    return jsonify({'success': True, 'gameweek': gw, 'corner_strategy': strategy, 'fixtures': fixtures, 'acca': acca, 'corner_acca': corner_acca_legs})
 
 
 @app.route('/api/predictions')
 def get_predictions():
     competition_id = 'world_cup_2026'
+    strategy = _corner_strategy_arg()
     
     with get_db() as db:
         cur = db.cursor()
@@ -373,20 +300,9 @@ def get_predictions():
             
             if goal_pred and corner_pred:
                 total_exp = corner_pred['results']['total_expected']
-                if total_exp < 9.0:
-                    rec_bet = "Under 11.5"
-                elif total_exp < 10.0:
-                    rec_bet = "Over 7.5"
-                else:
-                    rec_bet = "Over 8.5"
+                rec_bet = corner_tip(strategy, total_exp, home_name, away_name)
 
-                total_goal_exp = goal_pred['home_xg'] + goal_pred['away_xg']
-                if total_goal_exp > 3.0:
-                    rec_goal_bet = "Over 2.5"
-                elif total_goal_exp > 2.5:
-                    rec_goal_bet = "Over 1.5"
-                else:
-                    rec_goal_bet = "Under 3.5"
+                rec_goal_bet = goal_tip(goal_pred['home_xg'] + goal_pred['away_xg'])
 
                 predictions.append({
                     'id': match['id'],
@@ -419,391 +335,6 @@ def get_predictions():
             continue
             
     return jsonify({'success': True, 'predictions': predictions})
-
-# ---------------------------------------------------------------------------
-# "Beat the Model" game: guess a random past (2024/25) EPL fixture's markets and
-# see how you did versus the model. The model prediction is point-in-time
-# (as_of_date = match date) so it is leak-free — exactly what it would have said
-# before kickoff. The actual result is only revealed server-side at grade time.
-# ---------------------------------------------------------------------------
-GAME_COMPETITION = 'epl_2024'
-CORNER_LINES = [5.5, 6.5, 7.5, 8.5, 9.5, 10.5, 11.5, 12.5, 13.5, 14.5, 15.5]
-_ROUNDS = {}  # round_id -> {match_id, model_picks}  (in-memory; fine for local play)
-
-
-def _poisson_over(mean, line):
-    """P(total > line) for a half-integer line, using a Poisson(mean)."""
-    k_max = math.floor(line)
-    cdf = sum(math.exp(-mean) * mean ** k / math.factorial(k) for k in range(k_max + 1))
-    return max(0.0, min(1.0, 1.0 - cdf))
-
-
-@app.route('/game')
-def game_page():
-    return send_from_directory('static', 'game.html')
-
-
-@app.route('/api/game/fixture')
-def game_fixture():
-    """Return a random completed fixture + the model's leak-free prediction.
-    Does NOT include the actual result."""
-    with get_db() as db:
-        cur = db.cursor()
-        cur.execute('''
-            SELECT m.id, m.date, ht.name AS home, at.name AS away
-            FROM matches m
-            JOIN teams ht ON m.home_team_id = ht.id
-            JOIN teams at ON m.away_team_id = at.id
-            WHERE m.competition_id = ? AND m.status IN ('FT', 'AET', 'PEN')
-            ORDER BY RANDOM() LIMIT 8
-        ''', (GAME_COMPETITION,))
-        candidates = cur.fetchall()
-
-    for match in candidates:
-        try:
-            gp = predict_goals(match['home'], match['away'], GAME_COMPETITION,
-                               as_of_date=match['date'], verbose=False)
-            cp = predict_corners(match['home'], match['away'], GAME_COMPETITION,
-                                 as_of_date=match['date'], verbose=False)
-        except Exception as e:
-            print(f"Game predict error {match['home']} v {match['away']}: {e}")
-            continue
-        if not gp or not cp:
-            continue
-
-        res = gp['results']
-        h, d, a = res['home_win_prob'], res['draw_prob'], res['away_win_prob']
-        s = (h + d + a) or 1.0
-        h, d, a = h / s * 100, d / s * 100, a / s * 100
-        wdl = ['home', 'draw', 'away'][max(range(3), key=lambda i: (h, d, a)[i])]
-
-        btts = res.get('btts_prob', 0.0)
-        o15 = res.get('over_lines', {}).get(1.5, 0.0)
-        o25 = res.get('over_lines', {}).get(2.5, 0.0)
-
-        top_score = list(res['score_probs'].keys())[0]  # most likely scoreline (tuple)
-        model_score = f"{top_score[0]}–{top_score[1]}"
-
-        corner_mean = cp['results']['total_expected']
-        corner_probs = {L: round(_poisson_over(corner_mean, L) * 100, 1) for L in CORNER_LINES}
-        over50 = [L for L in CORNER_LINES if corner_probs[L] >= 50]
-        model_corner_line = max(over50) if over50 else min(CORNER_LINES)
-
-        model_picks = {
-            'wdl': wdl,
-            'gg': 'yes' if btts >= 50 else 'no',
-            'o15': 'yes' if o15 >= 50 else 'no',
-            'o25': 'yes' if o25 >= 50 else 'no',
-            'corner_line': model_corner_line,
-        }
-
-        round_id = uuid.uuid4().hex
-        _ROUNDS[round_id] = {'match_id': match['id'], 'model_picks': model_picks}
-        # Cap memory for long sessions
-        if len(_ROUNDS) > 500:
-            _ROUNDS.pop(next(iter(_ROUNDS)))
-
-        return jsonify({
-            'success': True,
-            'round_id': round_id,
-            'fixture': {'home': match['home'], 'away': match['away'], 'date': match['date'][:10]},
-            'model': {
-                'home_xg': round(gp['home_xg'], 2), 'away_xg': round(gp['away_xg'], 2),
-                'score': model_score,
-                'home_win': round(h, 1), 'draw': round(d, 1), 'away_win': round(a, 1),
-                'gg': round(btts, 1), 'o15': round(o15, 1), 'o25': round(o25, 1),
-                'corner_expected': round(corner_mean, 1),
-                'corner_probs': corner_probs,
-                'picks': model_picks,
-            },
-        })
-
-    return jsonify({'success': False, 'error': 'Could not build a fixture. Try again.'})
-
-
-@app.route('/api/game/grade', methods=['POST'])
-def game_grade():
-    """Grade the user's picks (and the model's) against the real result."""
-    data = request.get_json(force=True) or {}
-    rnd = _ROUNDS.get(data.get('round_id'))
-    if not rnd:
-        return jsonify({'success': False, 'error': 'Round expired — start a new fixture.'}), 404
-
-    user = data.get('picks', {})
-    model = rnd['model_picks']
-
-    with get_db() as db:
-        cur = db.cursor()
-        m = cur.execute(
-            'SELECT home_score AS hs, away_score AS a_s FROM matches WHERE id = ?',
-            (rnd['match_id'],)).fetchone()
-        c = cur.execute(
-            'SELECT SUM(corners) AS c FROM match_stats WHERE match_id = ?',
-            (rnd['match_id'],)).fetchone()
-
-    hs, as_ = m['hs'], m['a_s']
-    total = hs + as_
-    corners = c['c']
-    outcome = 'home' if hs > as_ else 'away' if as_ > hs else 'draw'
-    actual = {
-        'wdl': outcome,
-        'gg': 'yes' if (hs > 0 and as_ > 0) else 'no',
-        'o15': 'yes' if total > 1.5 else 'no',
-        'o25': 'yes' if total > 2.5 else 'no',
-        'home_score': hs, 'away_score': as_, 'corners': corners,
-    }
-
-    def corner_over(line):
-        return corners is not None and corners > line
-
-    cats = []
-    for key, label in [('wdl', '1X2'), ('gg', 'GG'), ('o15', 'Over 1.5'), ('o25', 'Over 2.5')]:
-        cats.append({
-            'label': label,
-            'you': user.get(key), 'model': model.get(key), 'actual': actual[key],
-            'you_correct': user.get(key) == actual[key],
-            'model_correct': model.get(key) == actual[key],
-        })
-    # Corners: "over the chosen line" — correct if actual total exceeds it
-    u_line = user.get('corner_line')
-    cats.append({
-        'label': 'Corners',
-        'you': f"Over {u_line}" if u_line is not None else '—',
-        'model': f"Over {model['corner_line']}",
-        'actual': f"{corners} corners" if corners is not None else 'n/a',
-        'you_correct': corner_over(float(u_line)) if u_line is not None else False,
-        'model_correct': corner_over(model['corner_line']),
-    })
-
-    _ROUNDS.pop(data['round_id'], None)
-    return jsonify({
-        'success': True,
-        'actual': actual,
-        'categories': cats,
-        'you_score': sum(1 for c in cats if c['you_correct']),
-        'model_score': sum(1 for c in cats if c['model_correct']),
-    })
-
-
-@app.route('/game/gameweek')
-def game_gameweek_page():
-    return send_from_directory('static', 'game_gw.html')
-
-
-@app.route('/api/game/gameweeks')
-def game_gameweeks():
-    with get_db() as db:
-        cur = db.cursor()
-        cur.execute('''
-            SELECT id, date FROM matches 
-            WHERE competition_id = ? AND status IN ('FT', 'AET', 'PEN')
-            ORDER BY date
-        ''', (GAME_COMPETITION,))
-        all_matches = cur.fetchall()
-    
-    # Chunk into groups of 10
-    total_gws = (len(all_matches) + 9) // 10
-    return jsonify({'success': True, 'total_gameweeks': total_gws})
-
-
-@app.route('/api/game/gameweek/<int:gw_id>')
-def game_gameweek_fixtures(gw_id):
-    if gw_id < 1:
-        return jsonify({'success': False, 'error': 'Invalid Gameweek'})
-        
-    offset = (gw_id - 1) * 10
-    limit = 10
-    
-    with get_db() as db:
-        cur = db.cursor()
-        cur.execute('''
-            SELECT m.id, m.date, ht.name AS home, at.name AS away
-            FROM matches m
-            JOIN teams ht ON m.home_team_id = ht.id
-            JOIN teams at ON m.away_team_id = at.id
-            WHERE m.competition_id = ? AND m.status IN ('FT', 'AET', 'PEN')
-            ORDER BY m.date
-            LIMIT ? OFFSET ?
-        ''', (GAME_COMPETITION, limit, offset))
-        matches = cur.fetchall()
-
-    if not matches:
-        return jsonify({'success': False, 'error': 'No fixtures found for this gameweek.'})
-
-    fixtures = []
-    round_id = uuid.uuid4().hex
-    gw_models = {}
-
-    for match in matches:
-        try:
-            gp = predict_goals(match['home'], match['away'], GAME_COMPETITION,
-                               as_of_date=match['date'], verbose=False)
-            cp = predict_corners(match['home'], match['away'], GAME_COMPETITION,
-                                 as_of_date=match['date'], verbose=False)
-        except Exception as e:
-            print(f"Game predict error {match['home']} v {match['away']}: {e}")
-            continue
-        if not gp or not cp:
-            continue
-
-        res = gp['results']
-        h, d, a = res['home_win_prob'], res['draw_prob'], res['away_win_prob']
-        s = (h + d + a) or 1.0
-        h, d, a = h / s * 100, d / s * 100, a / s * 100
-        wdl = ['home', 'draw', 'away'][max(range(3), key=lambda i: (h, d, a)[i])]
-
-        btts = res.get('btts_prob', 0.0)
-        o15 = res.get('over_lines', {}).get(1.5, 0.0)
-        o25 = res.get('over_lines', {}).get(2.5, 0.0)
-
-        top_score = list(res['score_probs'].keys())[0]  
-        model_score = f"{top_score[0]}–{top_score[1]}"
-
-        corner_mean = cp['results']['total_expected']
-        corner_probs = {L: round(_poisson_over(corner_mean, L) * 100, 1) for L in CORNER_LINES}
-        over50 = [L for L in CORNER_LINES if corner_probs[L] >= 50]
-        model_corner_line = max(over50) if over50 else min(CORNER_LINES)
-
-        model_picks = {
-            'wdl': wdl,
-            'gg': 'yes' if btts >= 50 else 'no',
-            'o15': 'yes' if o15 >= 50 else 'no',
-            'o25': 'yes' if o25 >= 50 else 'no',
-            'corner_line': model_corner_line,
-        }
-
-        gw_models[str(match['id'])] = model_picks
-
-        fixtures.append({
-            'match_id': str(match['id']),
-            'home': match['home'],
-            'away': match['away'],
-            'date': match['date'][:10],
-            'model': {
-                'home_xg': round(gp['home_xg'], 2), 'away_xg': round(gp['away_xg'], 2),
-                'score': model_score,
-                'home_win': round(h, 1), 'draw': round(d, 1), 'away_win': round(a, 1),
-                'gg': round(btts, 1), 'o15': round(o15, 1), 'o25': round(o25, 1),
-                'corner_expected': round(corner_mean, 1),
-                'corner_probs': corner_probs,
-                'picks': model_picks,
-            }
-        })
-
-    _ROUNDS[round_id] = {'type': 'gameweek', 'fixtures': gw_models}
-    if len(_ROUNDS) > 500:
-        _ROUNDS.pop(next(iter(_ROUNDS)))
-
-    return jsonify({
-        'success': True,
-        'round_id': round_id,
-        'fixtures': fixtures
-    })
-
-@app.route('/api/game/grade_gameweek', methods=['POST'])
-def game_grade_gameweek():
-    data = request.get_json(force=True) or {}
-    rnd = _ROUNDS.get(data.get('round_id'))
-    if not rnd or rnd.get('type') != 'gameweek':
-        return jsonify({'success': False, 'error': 'Round expired.'}), 404
-
-    user_picks = data.get('picks', {})
-    active_markets = data.get('markets', ['wdl', 'gg', 'o15', 'o25', 'corners'])
-    gw_models = rnd['fixtures']
-
-    match_ids = list(gw_models.keys())
-    if not match_ids:
-        return jsonify({'success': False, 'error': 'No matches found.'}), 404
-
-    placeholders = ','.join('?' for _ in match_ids)
-    
-    with get_db() as db:
-        cur = db.cursor()
-        matches = cur.execute(f'''
-            SELECT id, home_score, away_score
-            FROM matches WHERE id IN ({placeholders})
-        ''', match_ids).fetchall()
-        
-        c_stats = cur.execute(f'''
-            SELECT match_id, SUM(corners) AS c 
-            FROM match_stats WHERE match_id IN ({placeholders})
-            GROUP BY match_id
-        ''', match_ids).fetchall()
-        
-    corners_map = {str(c['match_id']): c['c'] for c in c_stats}
-    match_actuals = {}
-    
-    for m in matches:
-        mid = str(m['id'])
-        hs, as_ = m['home_score'], m['away_score']
-        total = hs + as_
-        outcome = 'home' if hs > as_ else 'away' if as_ > hs else 'draw'
-        c = corners_map.get(mid)
-        match_actuals[mid] = {
-            'wdl': outcome,
-            'gg': 'yes' if (hs > 0 and as_ > 0) else 'no',
-            'o15': 'yes' if total > 1.5 else 'no',
-            'o25': 'yes' if total > 2.5 else 'no',
-            'home_score': hs, 'away_score': as_, 'corners': c
-        }
-
-    results = []
-    total_user_score = 0
-    total_model_score = 0
-    
-    for mid in match_ids:
-        actual = match_actuals.get(mid)
-        if not actual: continue
-        
-        user = user_picks.get(mid, {})
-        model = gw_models[mid]
-        c = actual['corners']
-        
-        def corner_over(line):
-            return c is not None and c > line
-
-        cats = []
-        for key, label in [('wdl', '1X2'), ('gg', 'GG'), ('o15', 'O1.5'), ('o25', 'O2.5')]:
-            if key not in active_markets:
-                continue
-            u_correct = user.get(key) == actual[key] if user.get(key) else False
-            m_correct = model.get(key) == actual[key]
-            cats.append({
-                'label': label,
-                'you': user.get(key), 'model': model.get(key), 'actual': actual[key],
-                'you_correct': u_correct, 'model_correct': m_correct
-            })
-            if u_correct: total_user_score += 1
-            if m_correct: total_model_score += 1
-            
-        if 'corners' in active_markets:
-            u_line = user.get('corner_line')
-            u_c_correct = corner_over(float(u_line)) if u_line else False
-            m_c_correct = corner_over(model['corner_line'])
-            cats.append({
-                'label': 'Corners',
-                'you': f"Over {u_line}" if u_line else '—',
-                'model': f"Over {model['corner_line']}",
-                'actual': f"{c} corners" if c is not None else 'n/a',
-                'you_correct': u_c_correct,
-                'model_correct': m_c_correct
-            })
-            if u_c_correct: total_user_score += 1
-            if m_c_correct: total_model_score += 1
-        
-        results.append({
-            'match_id': mid,
-            'actual_summary': f"{actual['home_score']}–{actual['away_score']} ({c} c)",
-            'categories': cats
-        })
-
-    _ROUNDS.pop(data['round_id'], None)
-    return jsonify({
-        'success': True,
-        'results': results,
-        'you_score': total_user_score,
-        'model_score': total_model_score
-    })
 
 
 if __name__ == '__main__':
