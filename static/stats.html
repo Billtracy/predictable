@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Predictable — Tip Stats</title>
+    <meta name="description" content="How Predictable's live Premier League tips have done this season: overs and unders passed and lost, line by line and matchweek by matchweek.">
+    <meta name="theme-color" content="#7b2bf9">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/ui.css">
+    <script src="/static/js/ui.js"></script>
+    <style>
+        /* Overs vs Unders headline */
+        .split { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 4px 12px 12px; }
+        .side-box { background: var(--surface-2); border-radius: 12px; padding: 12px; }
+        .side-label { font-size: 11px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: var(--ink-3); }
+        .side-rate { font-family: 'Outfit'; font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: 2px; }
+        .side-counts { font-size: 12px; color: var(--ink-2); margin-top: 2px; }
+        .side-counts .won, .line-counts .won { color: var(--won); font-weight: 700; }
+        .side-counts .lost, .line-counts .lost { color: var(--lost); font-weight: 700; }
+
+        /* Passed / lost bar */
+        .pl { display: flex; height: 6px; gap: 2px; border-radius: 3px; overflow: hidden; margin-top: 8px; background: var(--line); }
+        .pl i { display: block; height: 100%; }
+        .pl i.won { background: var(--won); }
+        .pl i.lost { background: var(--lost); }
+
+        /* One row per tip line */
+        .line { padding: 12px 16px; border-top: 1px solid var(--line); }
+        .line-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+        .line-name { font-size: 14px; font-weight: 700; }
+        .line-name small { font-weight: 500; color: var(--ink-3); margin-left: 6px; }
+        .line-rate { font-family: 'Outfit'; font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+        .line-counts { font-size: 12px; color: var(--ink-2); margin-top: 2px; }
+
+        .table td small { display: block; font-size: 11px; color: var(--ink-3); }
+        .table-wrap { padding: 0 8px 8px; overflow-x: auto; }
+        .meta-note { font-size: 12px; color: var(--ink-3); text-align: center; padding: 16px 20px 0; line-height: 1.5; }
+    </style>
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-YTQEC745E8"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-YTQEC745E8');
+    </script>
+</head>
+<body>
+
+<div class="app">
+    <header class="hero">
+        <div class="hero-top">
+            <a href="/" class="brand"><span class="brand-mark">P</span>Predictable</a>
+            <div class="hero-actions" data-nav="top"></div>
+        </div>
+        <h1>Tip Stats</h1>
+        <p class="hero-sub">Every live tip this season as it stood at kickoff, and how many passed or lost.</p>
+        <div class="season-pill">Premier League <b>2026/27</b></div>
+    </header>
+
+    <main class="panel panel-top" id="content">
+        <div class="card"><div style="padding:20px 16px; display:grid; gap:12px"><div class="skel" style="height:60px"></div><div class="skel" style="height:60px"></div></div></div>
+    </main>
+
+    <p class="meta-note" id="metaNote"></p>
+    <footer>Predictable AI · Poisson engine with leak-free cross-season priors</footer>
+</div>
+
+<nav class="bottom-nav" aria-label="Main" data-nav="bottom"></nav>
+
+<script>
+const $ = id => document.getElementById(id);
+const MARKETS = [['goals', 'Goal tips'], ['corners', 'Corner tips']];
+
+let cornerStrategy = null; // same choice as the predictions page
+try { cornerStrategy = localStorage.getItem('predictable.cornerStrategy'); } catch (e) {}
+
+function pct(r) {
+    return r.graded ? Math.round(r.won / r.graded * 100) : null;
+}
+
+// 'Over 2.5' -> ['Over', 2.5]
+function parseTip(label) {
+    const [side, line] = label.split(' ');
+    return [side, parseFloat(line)];
+}
+
+function sumTips(tips, side) {
+    const total = { won: 0, graded: 0 };
+    Object.entries(tips).forEach(([label, r]) => {
+        if (parseTip(label)[0] === side) { total.won += r.won; total.graded += r.graded; }
+    });
+    return total;
+}
+
+function sortedTips(tips) {
+    return Object.entries(tips).sort(([a], [b]) => {
+        const [sa, la] = parseTip(a), [sb, lb] = parseTip(b);
+        return sa === sb ? la - lb : sa === 'Over' ? -1 : 1;
+    });
+}
+
+function barHTML(r) {
+    if (!r.graded) return '<div class="pl"></div>';
+    const lost = r.graded - r.won;
+    return `<div class="pl" aria-hidden="true">
+        ${r.won ? `<i class="won" style="flex:${r.won}"></i>` : ''}${lost ? `<i class="lost" style="flex:${lost}"></i>` : ''}
+    </div>`;
+}
+
+function countsHTML(r) {
+    return `<span class="won">${r.won} passed</span> · <span class="lost">${r.graded - r.won} lost</span>`;
+}
+
+function sideBoxHTML(label, r) {
+    return `<div class="side-box">
+        <div class="side-label">${label}</div>
+        <div class="side-rate">${r.graded ? pct(r) + '%' : '–'}</div>
+        <div class="side-counts">${r.graded ? countsHTML(r) : 'No tips yet'}</div>
+        ${barHTML(r)}
+    </div>`;
+}
+
+function marketCardHTML(label, r) {
+    const lines = sortedTips(r.tips).map(([tip, t]) => `
+        <div class="line">
+            <div class="line-top">
+                <span class="line-name">${esc(tip)}<small>${t.graded} tip${t.graded === 1 ? '' : 's'}</small></span>
+                <span class="line-rate">${pct(t)}%</span>
+            </div>
+            <div class="line-counts">${countsHTML(t)}</div>
+            ${barHTML(t)}
+        </div>`).join('');
+    return `<div class="card">
+        <div class="card-head"><h2>${label}</h2><span class="badge">${pct(r)}% · ${r.won}/${r.graded}</span></div>
+        <div class="card-sub">Overs and unders across the season, then each line.</div>
+        <div class="split">${sideBoxHTML('Overs', sumTips(r.tips, 'Over'))}${sideBoxHTML('Unders', sumTips(r.tips, 'Under'))}</div>
+        ${lines}
+    </div>`;
+}
+
+function cellHTML(r) {
+    return r.graded ? `<b>${pct(r)}%</b><small>${r.won}/${r.graded}</small>` : '<span style="color:var(--ink-3)">–</span>';
+}
+
+function gameweekTableHTML(gameweeks) {
+    const cells = g => MARKETS.flatMap(([m]) => ['Over', 'Under'].map(side => `<td>${cellHTML(sumTips(g[m].tips, side))}</td>`)).join('');
+    const rows = gameweeks.map(g => `<tr>
+        <td class="left"><a href="/epl?mw=${g.gameweek}" style="color:inherit; font-weight:600; text-decoration:none">MW ${g.gameweek}</a></td>
+        ${cells(g)}
+    </tr>`).join('');
+    return `<div class="card">
+        <div class="card-head"><h2>By matchweek</h2></div>
+        <div class="card-sub">Share of overs and unders that passed each week.</div>
+        <div class="table-wrap"><table class="table">
+            <thead>
+                <tr><th></th><th colspan="2">Goals</th><th colspan="2">Corners</th></tr>
+                <tr><th></th><th>Overs</th><th>Unders</th><th>Overs</th><th>Unders</th></tr>
+            </thead>
+            <tbody>${rows}</tbody>
+        </table></div>
+    </div>`;
+}
+
+async function init() {
+    try {
+        const url = '/api/epl/records' + (cornerStrategy ? `?corner_strategy=${encodeURIComponent(cornerStrategy)}` : '');
+        const d = await (await fetch(url)).json();
+        if (!d.success) throw new Error(d.error);
+        if (!d.gameweeks.length) {
+            $('content').innerHTML = `<div class="card"><div class="empty"><strong>No results yet</strong>Stats appear once the first matches are played.</div></div>`;
+            return;
+        }
+        $('content').innerHTML = MARKETS.map(([m, label]) => marketCardHTML(label, d.season[m])).join('')
+            + gameweekTableHTML(d.gameweeks);
+        $('metaNote').textContent = 'Corner tips use the strategy picked on the predictions page. A tip counts once its match has finished.';
+    } catch (e) {
+        $('content').innerHTML = `<div class="card"><div class="empty"><strong>Couldn't load stats</strong>Please try again in a moment.</div></div>`;
+        console.error(e);
+    }
+}
+init();
+</script>
+</body>
+</html>

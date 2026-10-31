@@ -70,6 +70,26 @@
         .skel-row .skel:nth-child(2) { height: 30px; border-radius: 8px; }
         .skel-row .skel:last-child { width: 70%; }
 
+        /* === Tip record === */
+        .rec { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px 12px 4px; }
+        .rec-item { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; }
+        .rec-label { font-size: 11px; font-weight: 600; color: var(--ink-3); text-transform: uppercase; letter-spacing: .4px; }
+        .rec-value { font-family: 'Outfit'; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+        .rec-value small { font-family: 'Inter'; font-size: 12px; font-weight: 600; color: var(--ink-2); margin-left: 6px; }
+        .rec-bar { height: 4px; border-radius: 2px; background: var(--line); margin-top: 6px; overflow: hidden; }
+        .rec-bar i { display: block; height: 100%; background: var(--won); border-radius: 2px; }
+        .rec-sides { font-size: 12px; color: var(--ink-2); margin-top: 6px; }
+        .rec-sides b { color: var(--ink); font-variant-numeric: tabular-nums; }
+        .rec-link { display: block; padding: 12px 16px; border-top: 1px solid var(--line); font-size: 13px; font-weight: 600; color: var(--brand); text-decoration: none; }
+        .rec-row { display: grid; grid-template-columns: 56px 1fr 1fr; gap: 12px; align-items: center; width: 100%; text-align: left; padding: 10px 16px; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; transition: background .2s; }
+        button.rec-row:hover { background: var(--surface-2); }
+        .rec-row.active { background: var(--surface-2); }
+        .rec-row.total { font-weight: 700; }
+        .rec-row .mw { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+        .rec-row .cell b { font-family: 'Outfit'; font-size: 16px; }
+        .rec-row .cell small { font-size: 12px; color: var(--ink-3); margin-left: 6px; }
+        .rec-row.head { font-size: 11px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; color: var(--ink-3); padding-top: 6px; padding-bottom: 6px; }
+
         /* === Accas === */
         .leg { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; padding: 12px 16px; border-top: 1px solid var(--line); }
         .leg-match { font-size: 13px; color: var(--ink-2); }
@@ -156,6 +176,12 @@
     <main>
         <section class="panel" id="panel-matches" role="tabpanel" aria-labelledby="tab-matches">
             <div class="card" id="fixtures"></div>
+            <div class="card" id="records" hidden>
+                <div class="card-head"><h2>Record by matchweek</h2></div>
+                <div class="card-sub">Each tip as it stood at kickoff, graded against the result.</div>
+                <div id="recordRows"></div>
+                <a class="rec-link" href="/stats">Overs &amp; unders, passed and lost →</a>
+            </div>
         </section>
 
         <section class="panel" id="panel-accas" role="tabpanel" aria-labelledby="tab-accas" hidden>
@@ -204,6 +230,7 @@ let gwData = {}; // cache for the active corner strategy
 let loadToken = 0;
 let cornerStrategies = [];
 let cornerStrategy = null; // null = server default
+let records = null; // /api/epl/records for the active corner strategy
 
 const STRATEGY_KEY = 'predictable.cornerStrategy';
 try { cornerStrategy = localStorage.getItem(STRATEGY_KEY); } catch (e) {}
@@ -218,7 +245,7 @@ function showTab(name) {
         $('panel-' + t).hidden = t !== name;
     });
     $('mwSection').hidden = name === 'model';
-    history.replaceState(null, '', name === 'matches' ? location.pathname : '#' + name);
+    history.replaceState(null, '', location.pathname + location.search + (name === 'matches' ? '' : '#' + name));
 }
 
 // === Corner strategies ===
@@ -260,6 +287,7 @@ function setStrategy(id) {
     gwData = {};
     renderStrategies();
     loadGameweek(currentGW);
+    loadRecords();
 }
 
 // === Matchweeks ===
@@ -273,7 +301,10 @@ async function init() {
         if (!d.success) throw new Error(d.error);
         totalGWs = d.total_gameweeks;
         liveGW = currentGW = d.current_gameweek || 1;
+        const asked = parseInt(new URLSearchParams(location.search).get('mw'), 10);
+        if (asked >= 1 && asked <= totalGWs) currentGW = asked;
         loadGameweek(currentGW);
+        loadRecords();
     } catch (e) {
         $('fixtures').innerHTML = emptyState('Couldn\'t load matchweeks', 'Make sure the backend is running, then refresh.');
         console.error(e);
@@ -330,6 +361,7 @@ async function loadGameweek(gw) {
     $('gwNext').disabled = gw >= totalGWs;
     $('exportCurrentLabel').textContent = `This matchweek (MW ${gw})`;
     if (!$('mwPicker').hidden) renderPicker();
+    renderRecords();
 
     if (!gwData[gw]) {
         $('fixtures').innerHTML = skeleton();
@@ -349,12 +381,66 @@ async function loadGameweek(gw) {
         const first = data.fixtures[0].date, last = data.fixtures[data.fixtures.length - 1].date;
         $('mwDates').textContent = fmtDay(first) === fmtDay(last) ? fmtDay(first) : `${fmtDay(first)} – ${fmtDay(last)}`;
         renderFixtures(data.fixtures);
+        $('fixtures').insertAdjacentHTML('afterbegin', recordStripHTML(data.record));
         renderAccas(data);
     } catch (e) {
         if (token !== loadToken) return;
         $('fixtures').innerHTML = emptyState('Couldn\'t load predictions', 'Please try again in a moment.');
         console.error(e);
     }
+}
+
+// === Tip record ===
+function pct(r) {
+    return Math.round(r.won / r.graded * 100);
+}
+
+function sideRecord(tips, side) {
+    const total = { won: 0, graded: 0 };
+    Object.entries(tips || {}).forEach(([label, r]) => {
+        if (label.startsWith(side)) { total.won += r.won; total.graded += r.graded; }
+    });
+    return total;
+}
+
+function recordStripHTML(record) {
+    if (!record || (!record.goals.graded && !record.corners.graded)) return '';
+    const side = (label, r) => r.graded ? `${label} <b>${r.won}/${r.graded}</b>` : '';
+    const item = (label, r) => r.graded ? `
+        <div class="rec-item">
+            <div class="rec-label">${label}</div>
+            <div class="rec-value">${pct(r)}%<small>${r.won}/${r.graded}</small></div>
+            <div class="rec-bar"><i style="width:${pct(r)}%"></i></div>
+            <div class="rec-sides">${[side('Overs', sideRecord(r.tips, 'Over')), side('Unders', sideRecord(r.tips, 'Under'))].filter(Boolean).join(' · ')}</div>
+        </div>` : '';
+    return `<div class="rec">${item('Goal tips', record.goals)}${item('Corner tips', record.corners)}</div>`;
+}
+
+async function loadRecords() {
+    const strategy = cornerStrategy;
+    try {
+        const r = await fetch('/api/epl/records' + (strategy ? `?corner_strategy=${encodeURIComponent(strategy)}` : ''));
+        const d = await r.json();
+        if (strategy !== cornerStrategy || !d.success) return;
+        records = d;
+        renderRecords();
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+function renderRecords() {
+    if (!records || !records.gameweeks.length) { $('records').hidden = true; return; }
+    const cell = r => r.graded ? `<span class="cell"><b>${pct(r)}%</b><small>${r.won}/${r.graded}</small></span>` : '<span class="cell">–</span>';
+    const rows = records.gameweeks.map(g => `
+        <button class="rec-row${g.gameweek === currentGW ? ' active' : ''}" onclick="loadGameweek(${g.gameweek})" aria-label="Matchweek ${g.gameweek}">
+            <span class="mw">MW ${g.gameweek}</span>${cell(g.goals)}${cell(g.corners)}
+        </button>`).join('');
+    $('recordRows').innerHTML = `
+        <div class="rec-row head"><span></span><span>Goals</span><span>Corners</span></div>
+        ${rows}
+        <div class="rec-row total"><span class="mw">Season</span>${cell(records.season.goals)}${cell(records.season.corners)}</div>`;
+    $('records').hidden = false;
 }
 
 // === Rendering ===

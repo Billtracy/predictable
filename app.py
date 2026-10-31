@@ -1,8 +1,9 @@
 import os
 import sys
 import re
+import threading
 from flask import Flask, jsonify, request, send_from_directory
-from db.database import get_db
+from db.database import get_db, DB_PATH
 from predictors.goals import predict_goals, goal_tip
 import json
 from predictors.acca import build_accas, grade_leg
@@ -38,12 +39,17 @@ def calculator_page():
 def backtest_page():
     return send_from_directory('static', 'backtest.html')
 
+@app.route('/stats')
+def stats_page():
+    return send_from_directory('static', 'stats.html')
+
 
 # ---------------------------------------------------------------------------
 # EPL 2026/27 prediction endpoints
 # ---------------------------------------------------------------------------
 EPL_COMPETITION = 'epl_2026'
 EPL_MATCHES_PER_GW = 10
+FINISHED = ('FT', 'AET', 'PEN')
 
 
 @app.route('/api/epl/gameweeks')
@@ -146,13 +152,103 @@ def backtest_results():
                     'corner_strategies': {k: s['label'] for k, s in CORNER_STRATEGIES.items()}, **results})
 
 
+# Built gameweeks keyed by (db version, gw, strategy). Predictions only change
+# when predictable.db does, and played gameweeks cost seconds each to rebuild.
+_gw_cache = {}
+_gw_cache_lock = threading.Lock()
+_gw_build_locks = {}  # one per gameweek, so concurrent requests wait rather than rebuild
+
+
+def _db_version():
+    # The WAL's size, not its mtime: SQLite recreates it on every open and close,
+    # while writes either grow it or get checkpointed into the main file.
+    wal = DB_PATH + '-wal'
+    return os.path.getmtime(DB_PATH), os.path.getsize(wal) if os.path.exists(wal) else 0
+
+
+def _cached_gameweek(gw, strategy):
+    key = (_db_version(), gw, strategy)
+    with _gw_cache_lock:
+        build_lock = _gw_build_locks.setdefault((gw, strategy), threading.Lock())
+    with build_lock:
+        with _gw_cache_lock:
+            if key in _gw_cache:
+                return _gw_cache[key]
+        payload = _build_gameweek(gw, strategy)
+        with _gw_cache_lock:
+            if any(k[0] != key[0] for k in _gw_cache):
+                _gw_cache.clear()
+            _gw_cache[key] = payload
+    return payload
+
+
+def _gameweek_record(fixtures):
+    """Graded tips in a gameweek, overall and per tip line:
+    {'goals': {'won', 'graded', 'tips': {'Over 1.5': {'won', 'graded'}, ...}}, 'corners': {...}}."""
+    record = {}
+    for market in ('goals', 'corners'):
+        r = {'won': 0, 'graded': 0, 'tips': {}}
+        for f in fixtures:
+            won = f[market].get('bet_won')
+            if won is None:
+                continue
+            tip = r['tips'].setdefault(f[market]['recommended_bet'], {'won': 0, 'graded': 0})
+            for counts in (r, tip):
+                counts['won'] += won
+                counts['graded'] += 1
+        record[market] = r
+    return record
+
+
+def _add_record(total, record):
+    """Accumulate one gameweek's record into a running total of the same shape."""
+    for market, r in record.items():
+        t = total.setdefault(market, {'won': 0, 'graded': 0, 'tips': {}})
+        t['won'] += r['won']
+        t['graded'] += r['graded']
+        for label, tip in r['tips'].items():
+            tt = t['tips'].setdefault(label, {'won': 0, 'graded': 0})
+            tt['won'] += tip['won']
+            tt['graded'] += tip['graded']
+
+
 @app.route('/api/epl/gameweek/<int:gw>')
 def epl_gameweek_predictions(gw):
     """Return predictions for every fixture in a gameweek."""
     if gw < 1:
         return jsonify({'success': False, 'error': 'Invalid gameweek'})
-    strategy = _corner_strategy_arg()
+    payload = _cached_gameweek(gw, _corner_strategy_arg())
+    if payload is None:
+        return jsonify({'success': False, 'error': 'No fixtures for this gameweek.'})
+    return jsonify({'success': True, **payload})
 
+
+def _played_gameweeks():
+    """Gameweeks with at least one finished match, in order."""
+    with get_db() as db:
+        statuses = [r['status'] for r in db.execute(
+            'SELECT status FROM matches WHERE competition_id = ? ORDER BY date', (EPL_COMPETITION,))]
+    return sorted({i // EPL_MATCHES_PER_GW + 1 for i, st in enumerate(statuses) if st in FINISHED})
+
+
+@app.route('/api/epl/records')
+def epl_records():
+    """Goal and corner tip record for every gameweek with a finished match."""
+    strategy = _corner_strategy_arg()
+    played = _played_gameweeks()
+
+    gameweeks = []
+    season = {}
+    for gw in played:
+        payload = _cached_gameweek(gw, strategy)
+        if not payload:
+            continue
+        _add_record(season, payload['record'])
+        gameweeks.append({'gameweek': gw, **payload['record']})
+    return jsonify({'success': True, 'corner_strategy': strategy, 'gameweeks': gameweeks, 'season': season})
+
+
+def _build_gameweek(gw, strategy):
     offset = (gw - 1) * EPL_MATCHES_PER_GW
 
     with get_db() as db:
@@ -170,7 +266,7 @@ def epl_gameweek_predictions(gw):
         ''', (EPL_COMPETITION, EPL_MATCHES_PER_GW, offset))
         matches = cur.fetchall()
 
-        finished_ids = [m['id'] for m in matches if m['status'] in ('FT', 'AET', 'PEN')]
+        finished_ids = [m['id'] for m in matches if m['status'] in FINISHED]
         corners_by_match = {}
         if finished_ids:
             placeholders = ','.join('?' for _ in finished_ids)
@@ -183,16 +279,20 @@ def epl_gameweek_predictions(gw):
             corners_by_match = {row['match_id']: row['c'] for row in cur.fetchall()}
 
     if not matches:
-        return jsonify({'success': False, 'error': 'No fixtures for this gameweek.'})
+        return None
 
     fixtures = []
     for match in matches:
         home_name = match['home']
         away_name = match['away']
 
+        # Once a match has kicked off, predict it from data before kickoff only:
+        # the live ratings already contain its result, so grading a tip made
+        # from them would be grading hindsight.
+        as_of = None if match['status'] == 'NS' else match['date']
         try:
-            gp = predict_goals(home_name, away_name, EPL_COMPETITION, verbose=False)
-            cp = predict_corners(home_name, away_name, EPL_COMPETITION, verbose=False)
+            gp = predict_goals(home_name, away_name, EPL_COMPETITION, as_of_date=as_of, verbose=False)
+            cp = predict_corners(home_name, away_name, EPL_COMPETITION, as_of_date=as_of, verbose=False)
         except Exception as e:
             print(f"EPL predict error {home_name} v {away_name}: {e}")
             continue
@@ -240,7 +340,7 @@ def epl_gameweek_predictions(gw):
         }
 
         # Include actual result + bet grading if match is finished
-        if match['status'] in ('FT', 'AET', 'PEN'):
+        if match['status'] in FINISHED:
             hs, as_ = match['home_score'], match['away_score']
             total_goals = hs + as_
             actual_corners = corners_by_match.get(match['id'])
@@ -261,7 +361,8 @@ def epl_gameweek_predictions(gw):
     for leg in acca + corner_acca_legs:
         leg['won'] = grade_leg(leg, fixtures_by_id)
 
-    return jsonify({'success': True, 'gameweek': gw, 'corner_strategy': strategy, 'fixtures': fixtures, 'acca': acca, 'corner_acca': corner_acca_legs})
+    return {'gameweek': gw, 'corner_strategy': strategy, 'fixtures': fixtures, 'record': _gameweek_record(fixtures),
+            'acca': acca, 'corner_acca': corner_acca_legs}
 
 
 @app.route('/api/predictions')
@@ -335,6 +436,18 @@ def get_predictions():
             continue
             
     return jsonify({'success': True, 'predictions': predictions})
+
+
+def _warm_records():
+    """Build played gameweeks at startup, newest first: that's the one visitors land on."""
+    try:
+        for gw in reversed(_played_gameweeks()):
+            _cached_gameweek(gw, DEFAULT_CORNER_STRATEGY)
+    except Exception as e:
+        print(f"Record warm-up failed: {e}")
+
+
+threading.Thread(target=_warm_records, daemon=True).start()
 
 
 if __name__ == '__main__':

@@ -38,6 +38,8 @@ function esc(v) {
 const NAV = [
     { href: '/epl', label: 'Predictions', short: 'Predictions',
       icon: '<circle cx="12" cy="12" r="9"/><path d="M12 7l4 3-1.5 4.5h-5L8 10z"/><path d="M12 3v4M21 10.5l-5-.5M17.5 19l-3-4.5M6.5 19l3-4.5M3 10.5l5-.5"/>' },
+    { href: '/stats', label: 'Stats', short: 'Stats',
+      icon: '<path d="M12 3a9 9 0 109 9h-9z"/><path d="M15 3.5A9 9 0 0120.5 9H15z"/>' },
     { href: '/ucl', label: 'Champions League', short: 'UCL',
       icon: '<path d="M12 3l2.2 4.5 4.8.7-3.5 3.4.8 4.9L12 14.2l-4.3 2.3.8-4.9L5 8.2l4.8-.7z"/><path d="M8 21h8M12 17v4"/>' },
     { href: '/calculator', label: 'Acca Calculator', short: 'Calculator',
