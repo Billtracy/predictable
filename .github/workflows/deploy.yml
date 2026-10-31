@@ -1,0 +1,47 @@
+# Every push to main goes live: the same sync + rebuild as deploy/deploy.sh.
+# The server keeps its own .env; secrets needed here:
+#   DEPLOY_SSH_KEY      private key authorised for opc on the server
+#   DEPLOY_KNOWN_HOSTS  output of `ssh-keyscan -t ed25519 84.8.151.225`
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+env:
+  HOST: opc@84.8.151.225
+  PROXY_NETWORK: whatsapp-analyzer_whatsapp_net
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: SSH setup
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
+          echo "${{ secrets.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519
+
+      - name: Sync code
+        # .env and the corner stats cache live only on the server; excluding
+        # them also stops --delete removing them.
+        run: |
+          rsync -az --delete --exclude-from=.dockerignore \
+            --exclude predictable.conf --exclude .env --exclude world_cup_stats_cache.json \
+            ./ "$HOST:predictable/"
+
+      - name: Build and restart
+        run: |
+          ssh "$HOST" "cd ~/predictable && sudo PROXY_NETWORK=$PROXY_NETWORK docker compose up -d --build --wait && sudo docker image prune -f >/dev/null && sudo docker builder prune -f >/dev/null"
+
+      - name: Check site
+        run: curl -fsS -o /dev/null -w "%{http_code}\n" https://predictableai.co.uk/
