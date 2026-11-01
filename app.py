@@ -43,6 +43,10 @@ def backtest_page():
 def stats_page():
     return send_from_directory('static', 'stats.html')
 
+@app.route('/ads.txt')
+def ads_txt():
+    return send_from_directory('static', 'ads.txt', mimetype='text/plain')
+
 
 # ---------------------------------------------------------------------------
 # EPL 2026/27 prediction endpoints
