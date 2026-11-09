@@ -155,8 +155,11 @@ def ingest(competition, season):
                     "abbreviation = COALESCE(excluded.abbreviation, teams.abbreviation)",
                     (tid, name, country, abbr),
                 )
+            # Upsert rather than REPLACE so corner counts fetched separately survive.
             cols = ", ".join(row)
-            db.execute(f"INSERT OR REPLACE INTO matches ({cols}) VALUES ({', '.join('?' * len(row))})",
+            updates = ", ".join(f"{c} = excluded.{c}" for c in row if c != "id")
+            db.execute(f"INSERT INTO matches ({cols}) VALUES ({', '.join('?' * len(row))}) "
+                       f"ON CONFLICT(id) DO UPDATE SET {updates}",
                        tuple(row.values()))
             if row["status"] == "FT":
                 n_ft += 1
