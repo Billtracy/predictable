@@ -180,7 +180,7 @@ async function init() {
         }
         $('content').innerHTML = MARKETS.map(([m, label]) => marketCardHTML(label, d.season[m])).join('')
             + gameweekTableHTML(d.gameweeks);
-        $('metaNote').textContent = 'Corner tips use the strategy picked on the predictions page. A tip counts once its match has finished.';
+        $('metaNote').textContent = 'Corner tips use the strategy picked on the predictions page. A tip counts once its match has finished, and is graded exactly as it was published: a later model change does not alter past tips.';
     } catch (e) {
         $('content').innerHTML = `<div class="card"><div class="empty"><strong>Couldn't load stats</strong>Please try again in a moment.</div></div>`;
         console.error(e);

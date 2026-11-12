@@ -188,6 +188,21 @@ rates most likely to land, out of Over 1.5 / Under 3.5 goals and Over 7.5 /
 Under 12.5 corners (`predictors/tips.py`). The older band rules on expected
 corners ("Tight bands", "Classic") are still selectable on the site.
 
+**Published record.** The site does not log tips as it shows them; it re-predicts
+played matches from data before kickoff. So the predictions already shown for
+played matches are frozen in `data/published_predictions.json` and served as they
+were. 2026/27 GW 1-10 come from the previous model (commit `7bcd72b`). **Before
+deploying any change that alters predictions**, freeze the played matches from
+the currently deployed commit:
+
+```bash
+git worktree add --detach /tmp/live <currently deployed commit>
+venv/bin/python experiments/freeze_published.py /tmp/live
+git worktree remove /tmp/live
+```
+
+The file is append-only: matches already frozen are never overwritten.
+
 ### 1. Data Collection
 - **API-Sports** provides aggregate stats per match: goals, corners, shots (total/on target/off target), possession, passes, fouls, saves
 - **SportRadar Extended** provides per-event X/Y coordinates on the pitch — specifically shot locations used to build the xG model

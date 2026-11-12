@@ -156,6 +156,80 @@ def backtest_results():
                     'corner_strategies': {k: s['label'] for k, s in CORNER_STRATEGIES.items()}, **results})
 
 
+PUBLISHED_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'published_predictions.json')
+
+
+def _load_published():
+    if not os.path.exists(PUBLISHED_FILE):
+        return {'versions': [], 'matches': {}}
+    with open(PUBLISHED_FILE) as fh:
+        return json.load(fh)
+
+
+# Predictions the site already showed for played matches, frozen by
+# experiments/freeze_published.py when the model changed. They are served as they
+# were, so a model change never rewrites the published record.
+_PUBLISHED = _load_published()
+_PUBLISHED_DEFAULT_STRATEGY = {v['commit']: v['default_corner_strategy'] for v in _PUBLISHED['versions']}
+
+
+def _published_fixture(match_id, strategy):
+    """(goals, corners) as published for a frozen match, or None to predict live.
+    A corner strategy that did not exist yet gets the tip the site then showed
+    by default."""
+    entry = _PUBLISHED['matches'].get(str(match_id))
+    if entry is None:
+        return None
+    tips = entry['corner_tips']
+    tip = tips.get(strategy) or tips[_PUBLISHED_DEFAULT_STRATEGY[entry['version']]]
+    return dict(entry['goals']), {**entry['corners'], 'recommended_bet': tip}
+
+
+def _live_fixture(match, strategy):
+    """(goals, corners) from the current model, or None if it can't price the match."""
+    home_name, away_name = match['home'], match['away']
+    # Once a match has kicked off, predict it from data before kickoff only:
+    # the live ratings already contain its result, so grading a tip made
+    # from them would be grading hindsight.
+    as_of = None if match['status'] == 'NS' else match['date']
+    try:
+        gp = predict_goals(home_name, away_name, EPL_COMPETITION, as_of_date=as_of, verbose=False)
+        cp = predict_corners(home_name, away_name, EPL_COMPETITION, as_of_date=as_of, verbose=False)
+    except Exception as e:
+        print(f"EPL predict error {home_name} v {away_name}: {e}")
+        return None
+    if not gp or not cp:
+        return None
+
+    res = gp['results']
+    h, d, a = res['home_win_prob'], res['draw_prob'], res['away_win_prob']
+    s = (h + d + a) or 1.0
+    h, d, a = h / s * 100, d / s * 100, a / s * 100
+
+    top_score = list(res['score_probs'].keys())[0]
+    total_exp = cp['results']['total_expected']
+    goals = {
+        'home_xg': round(gp['home_xg'], 2),
+        'away_xg': round(gp['away_xg'], 2),
+        'recommended_bet': goal_tip(gp['home_xg'] + gp['away_xg'], res['over_lines']),
+        'win_prob': round(h, 1),
+        'draw_prob': round(d, 1),
+        'loss_prob': round(a, 1),
+        'most_likely_score': f"{top_score[0]}–{top_score[1]}",
+        'btts_prob': round(res.get('btts_prob', 0), 1),
+        'over_2_5_prob': round(res.get('over_lines', {}).get(2.5, 0), 1),
+    }
+    corners = {
+        'home_expected': round(cp['home_expected'], 1),
+        'away_expected': round(cp['away_expected'], 1),
+        'total_expected': round(total_exp, 1),
+        'recommended_bet': corner_tip(strategy, total_exp, home_name, away_name, cp['results']['over_lines']),
+        'over_8_5_prob': round(cp['results']['over_lines'].get(8.5, 0), 1),
+        'over_9_5_prob': round(cp['results']['over_lines'].get(9.5, 0), 1),
+    }
+    return goals, corners
+
+
 # Built gameweeks keyed by (db version, gw, strategy). Predictions only change
 # when predictable.db does, and played gameweeks cost seconds each to rebuild.
 _gw_cache = {}
@@ -280,60 +354,18 @@ def _build_gameweek(gw, strategy):
 
     fixtures = []
     for match in matches:
-        home_name = match['home']
-        away_name = match['away']
-
-        # Once a match has kicked off, predict it from data before kickoff only:
-        # the live ratings already contain its result, so grading a tip made
-        # from them would be grading hindsight.
-        as_of = None if match['status'] == 'NS' else match['date']
-        try:
-            gp = predict_goals(home_name, away_name, EPL_COMPETITION, as_of_date=as_of, verbose=False)
-            cp = predict_corners(home_name, away_name, EPL_COMPETITION, as_of_date=as_of, verbose=False)
-        except Exception as e:
-            print(f"EPL predict error {home_name} v {away_name}: {e}")
+        predicted = _published_fixture(match['id'], strategy) or _live_fixture(match, strategy)
+        if predicted is None:
             continue
-        if not gp or not cp:
-            continue
-
-        res = gp['results']
-        h, d, a = res['home_win_prob'], res['draw_prob'], res['away_win_prob']
-        s = (h + d + a) or 1.0
-        h, d, a = h / s * 100, d / s * 100, a / s * 100
-
-        top_score = list(res['score_probs'].keys())[0]
-        score_str = f"{top_score[0]}–{top_score[1]}"
-
-        total_exp = cp['results']['total_expected']
-        rec_bet = corner_tip(strategy, total_exp, home_name, away_name, cp['results']['over_lines'])
-
-        rec_goal_bet = goal_tip(gp['home_xg'] + gp['away_xg'], res['over_lines'])
-
+        goals, corners = predicted
         fixture = {
             'match_id': match['id'],
             'date': match['date'],
             'status': match['status'],
-            'home_team': home_name,
-            'away_team': away_name,
-            'goals': {
-                'home_xg': round(gp['home_xg'], 2),
-                'away_xg': round(gp['away_xg'], 2),
-                'recommended_bet': rec_goal_bet,
-                'win_prob': round(h, 1),
-                'draw_prob': round(d, 1),
-                'loss_prob': round(a, 1),
-                'most_likely_score': score_str,
-                'btts_prob': round(res.get('btts_prob', 0), 1),
-                'over_2_5_prob': round(res.get('over_lines', {}).get(2.5, 0), 1),
-            },
-            'corners': {
-                'home_expected': round(cp['home_expected'], 1),
-                'away_expected': round(cp['away_expected'], 1),
-                'total_expected': round(total_exp, 1),
-                'recommended_bet': rec_bet,
-                'over_8_5_prob': round(cp['results']['over_lines'].get(8.5, 0), 1),
-                'over_9_5_prob': round(cp['results']['over_lines'].get(9.5, 0), 1),
-            },
+            'home_team': match['home'],
+            'away_team': match['away'],
+            'goals': goals,
+            'corners': corners,
         }
 
         # Include actual result + bet grading if match is finished
@@ -347,8 +379,8 @@ def _build_gameweek(gw, strategy):
                 'away_score': as_,
                 'corners': actual_corners,
             }
-            fixture['goals']['bet_won'] = _bet_won(rec_goal_bet, total_goals)
-            fixture['corners']['bet_won'] = _bet_won(rec_bet, actual_corners)
+            goals['bet_won'] = _bet_won(goals['recommended_bet'], total_goals)
+            corners['bet_won'] = _bet_won(corners['recommended_bet'], actual_corners)
 
         fixtures.append(fixture)
 

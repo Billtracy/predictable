@@ -1,0 +1,2616 @@
+{
+ "matches": {
+  "72221154": {
+   "corner_tips": {
+    "classic": "Over 7.5",
+    "tight": "Over 7.5"
+   },
+   "corners": {
+    "away_expected": 5.0,
+    "home_expected": 5.0,
+    "over_8_5_prob": 63.5,
+    "over_9_5_prob": 53.2,
+    "total_expected": 10.0
+   },
+   "gameweek": 1,
+   "goals": {
+    "away_xg": 0.66,
+    "btts_prob": 42.0,
+    "draw_prob": 22.0,
+    "home_xg": 1.93,
+    "loss_prob": 10.8,
+    "most_likely_score": "1\u20130",
+    "over_2_5_prob": 47.9,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 67.2
+   },
+   "version": "7bcd72b"
+  },
+  "72221156": {
+   "corner_tips": {
+    "classic": "Over 8.5",
+    "tight": "Over 7.5"
+   },
+   "corners": {
+    "away_expected": 5.0,
+    "home_expected": 5.0,
+    "over_8_5_prob": 62.1,
+    "over_9_5_prob": 51.9,
+    "total_expected": 10.0
+   },
+   "gameweek": 1,
+   "goals": {
+    "away_xg": 1.85,
+    "btts_prob": 63.3,
+    "draw_prob": 23.7,
+    "home_xg": 1.38,
+    "loss_prob": 47.3,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 62.3,
+    "recommended_bet": "Over 2.5",
+    "win_prob": 29.0
+   },
+   "version": "7bcd72b"
+  },
+  "72221158": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 12.5"
+   },
+   "corners": {
+    "away_expected": 4.2,
+    "home_expected": 4.2,
+    "over_8_5_prob": 48.1,
+    "over_9_5_prob": 37.5,
+    "total_expected": 8.5
+   },
+   "gameweek": 1,
+   "goals": {
+    "away_xg": 0.88,
+    "btts_prob": 38.5,
+    "draw_prob": 33.4,
+    "home_xg": 1.01,
+    "loss_prob": 29.9,
+    "most_likely_score": "0\u20130",
+    "over_2_5_prob": 29.7,
+    "recommended_bet": "Under 3.5",
+    "win_prob": 36.7
+   },
+   "version": "7bcd72b"
+  },
+  "72221160": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 12.5"
+   },
+   "corners": {
+    "away_expected": 4.2,
+    "home_expected": 4.2,
+    "over_8_5_prob": 48.0,
+    "over_9_5_prob": 36.9,
+    "total_expected": 8.5
+   },
+   "gameweek": 1,
+   "goals": {
+    "away_xg": 0.98,
+    "btts_prob": 42.0,
+    "draw_prob": 31.4,
+    "home_xg": 1.11,
+    "loss_prob": 31.7,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 34.1,
+    "recommended_bet": "Under 3.5",
+    "win_prob": 37.0
+   },
+   "version": "7bcd72b"
+  },
+  "72221162": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 12.5"
+   },
+   "corners": {
+    "away_expected": 4.2,
+    "home_expected": 4.2,
+    "over_8_5_prob": 47.3,
+    "over_9_5_prob": 36.8,
+    "total_expected": 8.5
+   },
+   "gameweek": 1,
+   "goals": {
+    "away_xg": 1.05,
+    "btts_prob": 45.3,
+    "draw_prob": 31.0,
+    "home_xg": 1.12,
+    "loss_prob": 32.4,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 37.6,
+    "recommended_bet": "Under 3.5",
+    "win_prob": 36.6
+   },
+   "version": "7bcd72b"
+  },
+  "72221164": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 11.5"
+   },
+   "corners": {
+    "away_expected": 3.4,
+    "home_expected": 3.4,
+    "over_8_5_prob": 28.3,
+    "over_9_5_prob": 20.3,
+    "total_expected": 6.8
+   },
+   "gameweek": 1,
+   "goals": {
+    "away_xg": 0.93,
+    "btts_prob": 42.4,
+    "draw_prob": 31.9,
+    "home_xg": 1.14,
+    "loss_prob": 27.8,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 34.4,
+    "recommended_bet": "Under 3.5",
+    "win_prob": 40.3
+   },
+   "version": "7bcd72b"
+  },
+  "72221166": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 11.5"
+   },
+   "corners": {
+    "away_expected": 3.7,
+    "home_expected": 3.7,
+    "over_8_5_prob": 34.2,
+    "over_9_5_prob": 24.9,
+    "total_expected": 7.3
+   },
+   "gameweek": 1,
+   "goals": {
+    "away_xg": 1.01,
+    "btts_prob": 40.2,
+    "draw_prob": 31.7,
+    "home_xg": 1.0,
+    "loss_prob": 35.0,
+    "most_likely_score": "0\u20130",
+    "over_2_5_prob": 32.8,
+    "recommended_bet": "Under 3.5",
+    "win_prob": 33.4
+   },
+   "version": "7bcd72b"
+  },
+  "72221168": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 11.5"
+   },
+   "corners": {
+    "away_expected": 3.7,
+    "home_expected": 3.7,
+    "over_8_5_prob": 33.9,
+    "over_9_5_prob": 25.0,
+    "total_expected": 7.3
+   },
+   "gameweek": 1,
+   "goals": {
+    "away_xg": 0.82,
+    "btts_prob": 45.0,
+    "draw_prob": 27.0,
+    "home_xg": 1.56,
+    "loss_prob": 18.3,
+    "most_likely_score": "1\u20130",
+    "over_2_5_prob": 41.9,
+    "recommended_bet": "Under 3.5",
+    "win_prob": 54.7
+   },
+   "version": "7bcd72b"
+  },
+  "72221170": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 11.5"
+   },
+   "corners": {
+    "away_expected": 3.9,
+    "home_expected": 3.9,
+    "over_8_5_prob": 38.6,
+    "over_9_5_prob": 29.0,
+    "total_expected": 7.8
+   },
+   "gameweek": 1,
+   "goals": {
+    "away_xg": 1.49,
+    "btts_prob": 54.6,
+    "draw_prob": 26.6,
+    "home_xg": 1.23,
+    "loss_prob": 42.4,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 50.5,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 31.0
+   },
+   "version": "7bcd72b"
+  },
+  "72221172": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 11.5"
+   },
+   "corners": {
+    "away_expected": 3.9,
+    "home_expected": 3.9,
+    "over_8_5_prob": 38.9,
+    "over_9_5_prob": 29.3,
+    "total_expected": 7.8
+   },
+   "gameweek": 1,
+   "goals": {
+    "away_xg": 1.36,
+    "btts_prob": 51.8,
+    "draw_prob": 27.7,
+    "home_xg": 1.15,
+    "loss_prob": 41.1,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 46.1,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 31.2
+   },
+   "version": "7bcd72b"
+  },
+  "72221212": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 12.5"
+   },
+   "corners": {
+    "away_expected": 5.3,
+    "home_expected": 3.6,
+    "over_8_5_prob": 51.2,
+    "over_9_5_prob": 40.5,
+    "total_expected": 8.9
+   },
+   "gameweek": 2,
+   "goals": {
+    "away_xg": 1.78,
+    "btts_prob": 47.1,
+    "draw_prob": 24.3,
+    "home_xg": 0.81,
+    "loss_prob": 59.6,
+    "most_likely_score": "0\u20131",
+    "over_2_5_prob": 47.6,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 16.1
+   },
+   "version": "7bcd72b"
+  },
+  "72221214": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 11.5"
+   },
+   "corners": {
+    "away_expected": 4.7,
+    "home_expected": 3.0,
+    "over_8_5_prob": 38.0,
+    "over_9_5_prob": 28.3,
+    "total_expected": 7.7
+   },
+   "gameweek": 2,
+   "goals": {
+    "away_xg": 1.13,
+    "btts_prob": 54.7,
+    "draw_prob": 25.8,
+    "home_xg": 1.64,
+    "loss_prob": 25.8,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 52.4,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 48.4
+   },
+   "version": "7bcd72b"
+  },
+  "72221216": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 12.5"
+   },
+   "corners": {
+    "away_expected": 4.8,
+    "home_expected": 3.9,
+    "over_8_5_prob": 49.4,
+    "over_9_5_prob": 38.7,
+    "total_expected": 8.7
+   },
+   "gameweek": 2,
+   "goals": {
+    "away_xg": 1.47,
+    "btts_prob": 60.4,
+    "draw_prob": 25.2,
+    "home_xg": 1.51,
+    "loss_prob": 36.9,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 57.1,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 37.9
+   },
+   "version": "7bcd72b"
+  },
+  "72221218": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 11.5"
+   },
+   "corners": {
+    "away_expected": 4.0,
+    "home_expected": 3.9,
+    "over_8_5_prob": 41.0,
+    "over_9_5_prob": 31.0,
+    "total_expected": 7.9
+   },
+   "gameweek": 2,
+   "goals": {
+    "away_xg": 1.24,
+    "btts_prob": 59.1,
+    "draw_prob": 24.2,
+    "home_xg": 1.72,
+    "loss_prob": 26.5,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 57.1,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 49.4
+   },
+   "version": "7bcd72b"
+  },
+  "72221220": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 11.5"
+   },
+   "corners": {
+    "away_expected": 4.7,
+    "home_expected": 3.0,
+    "over_8_5_prob": 38.9,
+    "over_9_5_prob": 28.9,
+    "total_expected": 7.7
+   },
+   "gameweek": 2,
+   "goals": {
+    "away_xg": 1.45,
+    "btts_prob": 50.1,
+    "draw_prob": 27.1,
+    "home_xg": 1.07,
+    "loss_prob": 45.2,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 45.5,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 27.7
+   },
+   "version": "7bcd72b"
+  },
+  "72221222": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 11.5"
+   },
+   "corners": {
+    "away_expected": 4.6,
+    "home_expected": 3.7,
+    "over_8_5_prob": 44.5,
+    "over_9_5_prob": 34.1,
+    "total_expected": 8.3
+   },
+   "gameweek": 2,
+   "goals": {
+    "away_xg": 1.39,
+    "btts_prob": 53.8,
+    "draw_prob": 27.1,
+    "home_xg": 1.26,
+    "loss_prob": 39.8,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 49.1,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 33.1
+   },
+   "version": "7bcd72b"
+  },
+  "72221224": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 11.5"
+   },
+   "corners": {
+    "away_expected": 3.4,
+    "home_expected": 3.9,
+    "over_8_5_prob": 32.6,
+    "over_9_5_prob": 23.8,
+    "total_expected": 7.3
+   },
+   "gameweek": 2,
+   "goals": {
+    "away_xg": 0.87,
+    "btts_prob": 52.5,
+    "draw_prob": 18.5,
+    "home_xg": 2.29,
+    "loss_prob": 12.1,
+    "most_likely_score": "2\u20130",
+    "over_2_5_prob": 61.2,
+    "recommended_bet": "Over 2.5",
+    "win_prob": 69.4
+   },
+   "version": "7bcd72b"
+  },
+  "72221226": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 12.5"
+   },
+   "corners": {
+    "away_expected": 3.6,
+    "home_expected": 4.9,
+    "over_8_5_prob": 46.5,
+    "over_9_5_prob": 36.4,
+    "total_expected": 8.4
+   },
+   "gameweek": 2,
+   "goals": {
+    "away_xg": 1.13,
+    "btts_prob": 58.3,
+    "draw_prob": 23.0,
+    "home_xg": 1.94,
+    "loss_prob": 21.1,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 58.8,
+    "recommended_bet": "Over 2.5",
+    "win_prob": 55.9
+   },
+   "version": "7bcd72b"
+  },
+  "72221228": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 12.5"
+   },
+   "corners": {
+    "away_expected": 4.4,
+    "home_expected": 4.4,
+    "over_8_5_prob": 51.2,
+    "over_9_5_prob": 40.6,
+    "total_expected": 8.9
+   },
+   "gameweek": 2,
+   "goals": {
+    "away_xg": 1.03,
+    "btts_prob": 48.8,
+    "draw_prob": 28.7,
+    "home_xg": 1.39,
+    "loss_prob": 27.0,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 43.2,
+    "recommended_bet": "Under 3.5",
+    "win_prob": 44.3
+   },
+   "version": "7bcd72b"
+  },
+  "72221230": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 12.5"
+   },
+   "corners": {
+    "away_expected": 4.3,
+    "home_expected": 4.3,
+    "over_8_5_prob": 47.9,
+    "over_9_5_prob": 37.5,
+    "total_expected": 8.5
+   },
+   "gameweek": 2,
+   "goals": {
+    "away_xg": 1.39,
+    "btts_prob": 61.4,
+    "draw_prob": 24.8,
+    "home_xg": 1.66,
+    "loss_prob": 31.5,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 58.4,
+    "recommended_bet": "Over 2.5",
+    "win_prob": 43.7
+   },
+   "version": "7bcd72b"
+  },
+  "72221232": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 12.5"
+   },
+   "corners": {
+    "away_expected": 3.4,
+    "home_expected": 5.5,
+    "over_8_5_prob": 50.6,
+    "over_9_5_prob": 40.3,
+    "total_expected": 9.0
+   },
+   "gameweek": 3,
+   "goals": {
+    "away_xg": 0.76,
+    "btts_prob": 47.5,
+    "draw_prob": 19.2,
+    "home_xg": 2.17,
+    "loss_prob": 11.2,
+    "most_likely_score": "2\u20130",
+    "over_2_5_prob": 56.6,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 69.6
+   },
+   "version": "7bcd72b"
+  },
+  "72221234": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 12.5"
+   },
+   "corners": {
+    "away_expected": 4.0,
+    "home_expected": 4.6,
+    "over_8_5_prob": 48.7,
+    "over_9_5_prob": 38.6,
+    "total_expected": 8.7
+   },
+   "gameweek": 3,
+   "goals": {
+    "away_xg": 0.84,
+    "btts_prob": 47.5,
+    "draw_prob": 24.0,
+    "home_xg": 1.75,
+    "loss_prob": 17.4,
+    "most_likely_score": "1\u20130",
+    "over_2_5_prob": 48.2,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 58.6
+   },
+   "version": "7bcd72b"
+  },
+  "72221236": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 12.5"
+   },
+   "corners": {
+    "away_expected": 3.6,
+    "home_expected": 4.8,
+    "over_8_5_prob": 46.4,
+    "over_9_5_prob": 35.9,
+    "total_expected": 8.4
+   },
+   "gameweek": 3,
+   "goals": {
+    "away_xg": 0.99,
+    "btts_prob": 55.9,
+    "draw_prob": 21.2,
+    "home_xg": 2.05,
+    "loss_prob": 17.3,
+    "most_likely_score": "2\u20130",
+    "over_2_5_prob": 59.1,
+    "recommended_bet": "Over 2.5",
+    "win_prob": 61.5
+   },
+   "version": "7bcd72b"
+  },
+  "72221238": {
+   "corner_tips": {
+    "classic": "Over 7.5",
+    "tight": "Over 7.5"
+   },
+   "corners": {
+    "away_expected": 5.3,
+    "home_expected": 4.0,
+    "over_8_5_prob": 56.3,
+    "over_9_5_prob": 45.9,
+    "total_expected": 9.3
+   },
+   "gameweek": 3,
+   "goals": {
+    "away_xg": 1.57,
+    "btts_prob": 63.9,
+    "draw_prob": 23.8,
+    "home_xg": 1.64,
+    "loss_prob": 36.1,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 62.4,
+    "recommended_bet": "Over 2.5",
+    "win_prob": 40.1
+   },
+   "version": "7bcd72b"
+  },
+  "72221240": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 11.5"
+   },
+   "corners": {
+    "away_expected": 3.0,
+    "home_expected": 4.7,
+    "over_8_5_prob": 39.2,
+    "over_9_5_prob": 29.2,
+    "total_expected": 7.7
+   },
+   "gameweek": 3,
+   "goals": {
+    "away_xg": 0.93,
+    "btts_prob": 50.5,
+    "draw_prob": 24.8,
+    "home_xg": 1.73,
+    "loss_prob": 19.5,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 50.3,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 55.7
+   },
+   "version": "7bcd72b"
+  },
+  "72221242": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 11.5"
+   },
+   "corners": {
+    "away_expected": 4.0,
+    "home_expected": 3.4,
+    "over_8_5_prob": 35.0,
+    "over_9_5_prob": 25.8,
+    "total_expected": 7.4
+   },
+   "gameweek": 3,
+   "goals": {
+    "away_xg": 0.85,
+    "btts_prob": 45.3,
+    "draw_prob": 27.4,
+    "home_xg": 1.48,
+    "loss_prob": 21.1,
+    "most_likely_score": "1\u20130",
+    "over_2_5_prob": 41.4,
+    "recommended_bet": "Under 3.5",
+    "win_prob": 51.5
+   },
+   "version": "7bcd72b"
+  },
+  "72221244": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 12.5"
+   },
+   "corners": {
+    "away_expected": 5.0,
+    "home_expected": 3.8,
+    "over_8_5_prob": 51.0,
+    "over_9_5_prob": 40.3,
+    "total_expected": 8.8
+   },
+   "gameweek": 3,
+   "goals": {
+    "away_xg": 1.83,
+    "btts_prob": 69.5,
+    "draw_prob": 22.8,
+    "home_xg": 1.78,
+    "loss_prob": 39.3,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 69.0,
+    "recommended_bet": "Over 2.5",
+    "win_prob": 37.9
+   },
+   "version": "7bcd72b"
+  },
+  "72221246": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 12.5"
+   },
+   "corners": {
+    "away_expected": 3.6,
+    "home_expected": 5.3,
+    "over_8_5_prob": 51.8,
+    "over_9_5_prob": 41.0,
+    "total_expected": 8.9
+   },
+   "gameweek": 3,
+   "goals": {
+    "away_xg": 0.68,
+    "btts_prob": 45.8,
+    "draw_prob": 14.4,
+    "home_xg": 2.64,
+    "loss_prob": 6.8,
+    "most_likely_score": "2\u20130",
+    "over_2_5_prob": 64.1,
+    "recommended_bet": "Over 2.5",
+    "win_prob": 78.8
+   },
+   "version": "7bcd72b"
+  },
+  "72221248": {
+   "corner_tips": {
+    "classic": "Over 8.5",
+    "tight": "Over 8.5"
+   },
+   "corners": {
+    "away_expected": 6.1,
+    "home_expected": 5.3,
+    "over_8_5_prob": 75.0,
+    "over_9_5_prob": 65.9,
+    "total_expected": 11.4
+   },
+   "gameweek": 3,
+   "goals": {
+    "away_xg": 1.3,
+    "btts_prob": 61.1,
+    "draw_prob": 25.4,
+    "home_xg": 1.77,
+    "loss_prob": 27.5,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 58.2,
+    "recommended_bet": "Over 2.5",
+    "win_prob": 47.1
+   },
+   "version": "7bcd72b"
+  },
+  "72221250": {
+   "corner_tips": {
+    "classic": "Over 7.5",
+    "tight": "Over 7.5"
+   },
+   "corners": {
+    "away_expected": 4.1,
+    "home_expected": 4.9,
+    "over_8_5_prob": 52.9,
+    "over_9_5_prob": 42.2,
+    "total_expected": 9.1
+   },
+   "gameweek": 3,
+   "goals": {
+    "away_xg": 0.9,
+    "btts_prob": 47.9,
+    "draw_prob": 25.3,
+    "home_xg": 1.68,
+    "loss_prob": 20.3,
+    "most_likely_score": "1\u20130",
+    "over_2_5_prob": 46.8,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 54.4
+   },
+   "version": "7bcd72b"
+  },
+  "72221252": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 11.5"
+   },
+   "corners": {
+    "away_expected": 3.7,
+    "home_expected": 3.7,
+    "over_8_5_prob": 35.6,
+    "over_9_5_prob": 26.6,
+    "total_expected": 7.4
+   },
+   "gameweek": 4,
+   "goals": {
+    "away_xg": 0.9,
+    "btts_prob": 38.6,
+    "draw_prob": 32.6,
+    "home_xg": 1.02,
+    "loss_prob": 30.2,
+    "most_likely_score": "0\u20130",
+    "over_2_5_prob": 30.4,
+    "recommended_bet": "Under 3.5",
+    "win_prob": 37.2
+   },
+   "version": "7bcd72b"
+  },
+  "72221254": {
+   "corner_tips": {
+    "classic": "Over 7.5",
+    "tight": "Over 7.5"
+   },
+   "corners": {
+    "away_expected": 5.6,
+    "home_expected": 4.3,
+    "over_8_5_prob": 60.3,
+    "over_9_5_prob": 49.9,
+    "total_expected": 9.9
+   },
+   "gameweek": 4,
+   "goals": {
+    "away_xg": 1.56,
+    "btts_prob": 61.7,
+    "draw_prob": 25.1,
+    "home_xg": 1.48,
+    "loss_prob": 38.9,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 59.0,
+    "recommended_bet": "Over 2.5",
+    "win_prob": 36.0
+   },
+   "version": "7bcd72b"
+  },
+  "72221256": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 11.5"
+   },
+   "corners": {
+    "away_expected": 3.8,
+    "home_expected": 4.3,
+    "over_8_5_prob": 42.5,
+    "over_9_5_prob": 32.5,
+    "total_expected": 8.0
+   },
+   "gameweek": 4,
+   "goals": {
+    "away_xg": 1.18,
+    "btts_prob": 56.2,
+    "draw_prob": 25.2,
+    "home_xg": 1.67,
+    "loss_prob": 26.5,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 54.4,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 48.4
+   },
+   "version": "7bcd72b"
+  },
+  "72221258": {
+   "corner_tips": {
+    "classic": "Over 7.5",
+    "tight": "Over 7.5"
+   },
+   "corners": {
+    "away_expected": 5.1,
+    "home_expected": 4.0,
+    "over_8_5_prob": 54.4,
+    "over_9_5_prob": 44.1,
+    "total_expected": 9.2
+   },
+   "gameweek": 4,
+   "goals": {
+    "away_xg": 1.75,
+    "btts_prob": 53.2,
+    "draw_prob": 24.6,
+    "home_xg": 1.0,
+    "loss_prob": 54.4,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 52.0,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 20.9
+   },
+   "version": "7bcd72b"
+  },
+  "72221260": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 11.5"
+   },
+   "corners": {
+    "away_expected": 4.4,
+    "home_expected": 3.1,
+    "over_8_5_prob": 37.2,
+    "over_9_5_prob": 27.7,
+    "total_expected": 7.5
+   },
+   "gameweek": 4,
+   "goals": {
+    "away_xg": 1.37,
+    "btts_prob": 60.3,
+    "draw_prob": 25.5,
+    "home_xg": 1.56,
+    "loss_prob": 32.5,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 56.1,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 42.0
+   },
+   "version": "7bcd72b"
+  },
+  "72221262": {
+   "corner_tips": {
+    "classic": "Over 7.5",
+    "tight": "Over 7.5"
+   },
+   "corners": {
+    "away_expected": 4.6,
+    "home_expected": 4.8,
+    "over_8_5_prob": 56.6,
+    "over_9_5_prob": 45.8,
+    "total_expected": 9.4
+   },
+   "gameweek": 4,
+   "goals": {
+    "away_xg": 1.36,
+    "btts_prob": 53.7,
+    "draw_prob": 27.0,
+    "home_xg": 1.27,
+    "loss_prob": 38.6,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 48.6,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 34.5
+   },
+   "version": "7bcd72b"
+  },
+  "72221264": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 11.5"
+   },
+   "corners": {
+    "away_expected": 4.4,
+    "home_expected": 3.4,
+    "over_8_5_prob": 39.2,
+    "over_9_5_prob": 29.5,
+    "total_expected": 7.8
+   },
+   "gameweek": 4,
+   "goals": {
+    "away_xg": 1.21,
+    "btts_prob": 61.3,
+    "draw_prob": 22.4,
+    "home_xg": 2.07,
+    "loss_prob": 21.1,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 63.5,
+    "recommended_bet": "Over 2.5",
+    "win_prob": 56.4
+   },
+   "version": "7bcd72b"
+  },
+  "72221266": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 12.5"
+   },
+   "corners": {
+    "away_expected": 4.2,
+    "home_expected": 4.3,
+    "over_8_5_prob": 47.0,
+    "over_9_5_prob": 37.0,
+    "total_expected": 8.5
+   },
+   "gameweek": 4,
+   "goals": {
+    "away_xg": 2.04,
+    "btts_prob": 63.5,
+    "draw_prob": 22.7,
+    "home_xg": 1.3,
+    "loss_prob": 54.0,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 64.6,
+    "recommended_bet": "Over 2.5",
+    "win_prob": 23.3
+   },
+   "version": "7bcd72b"
+  },
+  "72221268": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 11.5"
+   },
+   "corners": {
+    "away_expected": 4.4,
+    "home_expected": 3.2,
+    "over_8_5_prob": 36.7,
+    "over_9_5_prob": 26.9,
+    "total_expected": 7.6
+   },
+   "gameweek": 4,
+   "goals": {
+    "away_xg": 1.33,
+    "btts_prob": 35.3,
+    "draw_prob": 29.6,
+    "home_xg": 0.64,
+    "loss_prob": 53.4,
+    "most_likely_score": "0\u20131",
+    "over_2_5_prob": 31.7,
+    "recommended_bet": "Under 3.5",
+    "win_prob": 17.0
+   },
+   "version": "7bcd72b"
+  },
+  "72221270": {
+   "corner_tips": {
+    "classic": "Over 8.5",
+    "tight": "Over 7.5"
+   },
+   "corners": {
+    "away_expected": 4.9,
+    "home_expected": 5.4,
+    "over_8_5_prob": 64.3,
+    "over_9_5_prob": 53.7,
+    "total_expected": 10.2
+   },
+   "gameweek": 4,
+   "goals": {
+    "away_xg": 1.5,
+    "btts_prob": 52.6,
+    "draw_prob": 27.3,
+    "home_xg": 1.07,
+    "loss_prob": 46.2,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 48.3,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 26.5
+   },
+   "version": "7bcd72b"
+  },
+  "72221272": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 12.5"
+   },
+   "corners": {
+    "away_expected": 4.4,
+    "home_expected": 4.4,
+    "over_8_5_prob": 49.2,
+    "over_9_5_prob": 39.0,
+    "total_expected": 8.8
+   },
+   "gameweek": 5,
+   "goals": {
+    "away_xg": 1.56,
+    "btts_prob": 62.0,
+    "draw_prob": 25.3,
+    "home_xg": 1.55,
+    "loss_prob": 37.5,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 59.6,
+    "recommended_bet": "Over 2.5",
+    "win_prob": 37.1
+   },
+   "version": "7bcd72b"
+  },
+  "72221274": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 12.5"
+   },
+   "corners": {
+    "away_expected": 4.0,
+    "home_expected": 4.7,
+    "over_8_5_prob": 50.9,
+    "over_9_5_prob": 41.0,
+    "total_expected": 8.7
+   },
+   "gameweek": 5,
+   "goals": {
+    "away_xg": 1.55,
+    "btts_prob": 67.6,
+    "draw_prob": 22.9,
+    "home_xg": 1.99,
+    "loss_prob": 29.0,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 67.2,
+    "recommended_bet": "Over 2.5",
+    "win_prob": 48.1
+   },
+   "version": "7bcd72b"
+  },
+  "72221276": {
+   "corner_tips": {
+    "classic": "Over 7.5",
+    "tight": "Over 7.5"
+   },
+   "corners": {
+    "away_expected": 5.3,
+    "home_expected": 4.1,
+    "over_8_5_prob": 56.6,
+    "over_9_5_prob": 46.2,
+    "total_expected": 9.4
+   },
+   "gameweek": 5,
+   "goals": {
+    "away_xg": 1.52,
+    "btts_prob": 55.0,
+    "draw_prob": 26.6,
+    "home_xg": 1.17,
+    "loss_prob": 44.5,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 50.7,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 28.9
+   },
+   "version": "7bcd72b"
+  },
+  "72221278": {
+   "corner_tips": {
+    "classic": "Over 8.5",
+    "tight": "Over 7.5"
+   },
+   "corners": {
+    "away_expected": 4.0,
+    "home_expected": 6.3,
+    "over_8_5_prob": 66.5,
+    "over_9_5_prob": 56.3,
+    "total_expected": 10.3
+   },
+   "gameweek": 5,
+   "goals": {
+    "away_xg": 1.2,
+    "btts_prob": 58.9,
+    "draw_prob": 24.8,
+    "home_xg": 1.75,
+    "loss_prob": 25.3,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 56.9,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 49.9
+   },
+   "version": "7bcd72b"
+  },
+  "72221280": {
+   "corner_tips": {
+    "classic": "Over 7.5",
+    "tight": "Under 12.5"
+   },
+   "corners": {
+    "away_expected": 4.2,
+    "home_expected": 4.8,
+    "over_8_5_prob": 52.4,
+    "over_9_5_prob": 42.2,
+    "total_expected": 9.0
+   },
+   "gameweek": 5,
+   "goals": {
+    "away_xg": 1.73,
+    "btts_prob": 62.5,
+    "draw_prob": 24.7,
+    "home_xg": 1.41,
+    "loss_prob": 44.7,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 60.2,
+    "recommended_bet": "Over 2.5",
+    "win_prob": 30.6
+   },
+   "version": "7bcd72b"
+  },
+  "72221282": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 11.5"
+   },
+   "corners": {
+    "away_expected": 3.5,
+    "home_expected": 4.5,
+    "over_8_5_prob": 41.3,
+    "over_9_5_prob": 31.2,
+    "total_expected": 8.0
+   },
+   "gameweek": 5,
+   "goals": {
+    "away_xg": 0.96,
+    "btts_prob": 52.5,
+    "draw_prob": 24.4,
+    "home_xg": 1.77,
+    "loss_prob": 19.3,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 52.3,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 56.3
+   },
+   "version": "7bcd72b"
+  },
+  "72221284": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 11.5"
+   },
+   "corners": {
+    "away_expected": 3.7,
+    "home_expected": 4.4,
+    "over_8_5_prob": 43.0,
+    "over_9_5_prob": 33.3,
+    "total_expected": 8.1
+   },
+   "gameweek": 5,
+   "goals": {
+    "away_xg": 0.64,
+    "btts_prob": 38.7,
+    "draw_prob": 23.8,
+    "home_xg": 1.7,
+    "loss_prob": 13.3,
+    "most_likely_score": "1\u20130",
+    "over_2_5_prob": 41.9,
+    "recommended_bet": "Under 3.5",
+    "win_prob": 62.9
+   },
+   "version": "7bcd72b"
+  },
+  "72221286": {
+   "corner_tips": {
+    "classic": "Over 8.5",
+    "tight": "Over 7.5"
+   },
+   "corners": {
+    "away_expected": 4.9,
+    "home_expected": 5.1,
+    "over_8_5_prob": 63.6,
+    "over_9_5_prob": 53.3,
+    "total_expected": 10.0
+   },
+   "gameweek": 5,
+   "goals": {
+    "away_xg": 1.39,
+    "btts_prob": 56.5,
+    "draw_prob": 27.2,
+    "home_xg": 1.35,
+    "loss_prob": 37.4,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 51.7,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 35.4
+   },
+   "version": "7bcd72b"
+  },
+  "72221288": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 11.5"
+   },
+   "corners": {
+    "away_expected": 4.6,
+    "home_expected": 3.4,
+    "over_8_5_prob": 41.3,
+    "over_9_5_prob": 31.5,
+    "total_expected": 8.0
+   },
+   "gameweek": 5,
+   "goals": {
+    "away_xg": 0.76,
+    "btts_prob": 42.5,
+    "draw_prob": 25.0,
+    "home_xg": 1.64,
+    "loss_prob": 15.9,
+    "most_likely_score": "1\u20130",
+    "over_2_5_prob": 42.6,
+    "recommended_bet": "Under 3.5",
+    "win_prob": 59.1
+   },
+   "version": "7bcd72b"
+  },
+  "72221290": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 12.5"
+   },
+   "corners": {
+    "away_expected": 4.2,
+    "home_expected": 4.6,
+    "over_8_5_prob": 49.5,
+    "over_9_5_prob": 38.4,
+    "total_expected": 8.8
+   },
+   "gameweek": 5,
+   "goals": {
+    "away_xg": 1.04,
+    "btts_prob": 43.3,
+    "draw_prob": 32.1,
+    "home_xg": 1.07,
+    "loss_prob": 32.6,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 34.7,
+    "recommended_bet": "Under 3.5",
+    "win_prob": 35.3
+   },
+   "version": "7bcd72b"
+  },
+  "72221292": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 11.5"
+   },
+   "corners": {
+    "away_expected": 3.5,
+    "home_expected": 4.7,
+    "over_8_5_prob": 44.2,
+    "over_9_5_prob": 34.6,
+    "total_expected": 8.2
+   },
+   "gameweek": 6,
+   "goals": {
+    "away_xg": 0.81,
+    "btts_prob": 43.0,
+    "draw_prob": 27.9,
+    "home_xg": 1.49,
+    "loss_prob": 19.3,
+    "most_likely_score": "1\u20130",
+    "over_2_5_prob": 40.3,
+    "recommended_bet": "Under 3.5",
+    "win_prob": 52.8
+   },
+   "version": "7bcd72b"
+  },
+  "72221294": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 11.5"
+   },
+   "corners": {
+    "away_expected": 4.3,
+    "home_expected": 3.7,
+    "over_8_5_prob": 40.2,
+    "over_9_5_prob": 30.4,
+    "total_expected": 8.0
+   },
+   "gameweek": 6,
+   "goals": {
+    "away_xg": 1.66,
+    "btts_prob": 56.6,
+    "draw_prob": 24.9,
+    "home_xg": 1.17,
+    "loss_prob": 48.0,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 53.7,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 27.1
+   },
+   "version": "7bcd72b"
+  },
+  "72221296": {
+   "corner_tips": {
+    "classic": "Over 7.5",
+    "tight": "Over 7.5"
+   },
+   "corners": {
+    "away_expected": 4.4,
+    "home_expected": 5.4,
+    "over_8_5_prob": 61.0,
+    "over_9_5_prob": 50.3,
+    "total_expected": 9.8
+   },
+   "gameweek": 6,
+   "goals": {
+    "away_xg": 1.56,
+    "btts_prob": 67.0,
+    "draw_prob": 24.5,
+    "home_xg": 1.77,
+    "loss_prob": 33.3,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 64.8,
+    "recommended_bet": "Over 2.5",
+    "win_prob": 42.3
+   },
+   "version": "7bcd72b"
+  },
+  "72221298": {
+   "corner_tips": {
+    "classic": "Over 8.5",
+    "tight": "Over 7.5"
+   },
+   "corners": {
+    "away_expected": 4.2,
+    "home_expected": 5.8,
+    "over_8_5_prob": 63.1,
+    "over_9_5_prob": 51.9,
+    "total_expected": 10.0
+   },
+   "gameweek": 6,
+   "goals": {
+    "away_xg": 1.51,
+    "btts_prob": 55.6,
+    "draw_prob": 25.9,
+    "home_xg": 1.24,
+    "loss_prob": 43.6,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 51.6,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 30.4
+   },
+   "version": "7bcd72b"
+  },
+  "72221300": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 11.5"
+   },
+   "corners": {
+    "away_expected": 3.8,
+    "home_expected": 3.2,
+    "over_8_5_prob": 30.9,
+    "over_9_5_prob": 21.8,
+    "total_expected": 7.0
+   },
+   "gameweek": 6,
+   "goals": {
+    "away_xg": 1.32,
+    "btts_prob": 46.4,
+    "draw_prob": 30.0,
+    "home_xg": 0.99,
+    "loss_prob": 43.3,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 40.4,
+    "recommended_bet": "Under 3.5",
+    "win_prob": 26.7
+   },
+   "version": "7bcd72b"
+  },
+  "72221302": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 12.5"
+   },
+   "corners": {
+    "away_expected": 5.3,
+    "home_expected": 3.6,
+    "over_8_5_prob": 51.8,
+    "over_9_5_prob": 41.1,
+    "total_expected": 9.0
+   },
+   "gameweek": 6,
+   "goals": {
+    "away_xg": 1.22,
+    "btts_prob": 50.5,
+    "draw_prob": 28.1,
+    "home_xg": 1.22,
+    "loss_prob": 35.6,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 45.4,
+    "recommended_bet": "Under 3.5",
+    "win_prob": 36.3
+   },
+   "version": "7bcd72b"
+  },
+  "72221304": {
+   "corner_tips": {
+    "classic": "Over 8.5",
+    "tight": "Over 8.5"
+   },
+   "corners": {
+    "away_expected": 6.2,
+    "home_expected": 4.2,
+    "over_8_5_prob": 68.1,
+    "over_9_5_prob": 58.1,
+    "total_expected": 10.5
+   },
+   "gameweek": 6,
+   "goals": {
+    "away_xg": 1.4,
+    "btts_prob": 59.7,
+    "draw_prob": 25.8,
+    "home_xg": 1.52,
+    "loss_prob": 34.5,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 55.8,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 39.7
+   },
+   "version": "7bcd72b"
+  },
+  "72221306": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 12.5"
+   },
+   "corners": {
+    "away_expected": 5.0,
+    "home_expected": 3.8,
+    "over_8_5_prob": 51.4,
+    "over_9_5_prob": 40.8,
+    "total_expected": 8.9
+   },
+   "gameweek": 6,
+   "goals": {
+    "away_xg": 1.59,
+    "btts_prob": 58.6,
+    "draw_prob": 25.3,
+    "home_xg": 1.29,
+    "loss_prob": 43.5,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 55.6,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 31.1
+   },
+   "version": "7bcd72b"
+  },
+  "72221308": {
+   "corner_tips": {
+    "classic": "Over 8.5",
+    "tight": "Over 8.5"
+   },
+   "corners": {
+    "away_expected": 5.3,
+    "home_expected": 5.7,
+    "over_8_5_prob": 72.8,
+    "over_9_5_prob": 63.0,
+    "total_expected": 11.0
+   },
+   "gameweek": 6,
+   "goals": {
+    "away_xg": 0.98,
+    "btts_prob": 56.7,
+    "draw_prob": 20.0,
+    "home_xg": 2.23,
+    "loss_prob": 14.3,
+    "most_likely_score": "2\u20130",
+    "over_2_5_prob": 62.3,
+    "recommended_bet": "Over 2.5",
+    "win_prob": 65.7
+   },
+   "version": "7bcd72b"
+  },
+  "72221310": {
+   "corner_tips": {
+    "classic": "Over 7.5",
+    "tight": "Over 7.5"
+   },
+   "corners": {
+    "away_expected": 4.5,
+    "home_expected": 4.9,
+    "over_8_5_prob": 57.1,
+    "over_9_5_prob": 46.6,
+    "total_expected": 9.4
+   },
+   "gameweek": 6,
+   "goals": {
+    "away_xg": 1.83,
+    "btts_prob": 57.5,
+    "draw_prob": 24.2,
+    "home_xg": 1.12,
+    "loss_prob": 53.2,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 57.1,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 22.6
+   },
+   "version": "7bcd72b"
+  },
+  "72221312": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 11.5"
+   },
+   "corners": {
+    "away_expected": 3.9,
+    "home_expected": 4.0,
+    "over_8_5_prob": 41.0,
+    "over_9_5_prob": 30.6,
+    "total_expected": 8.0
+   },
+   "gameweek": 7,
+   "goals": {
+    "away_xg": 1.17,
+    "btts_prob": 54.9,
+    "draw_prob": 26.0,
+    "home_xg": 1.56,
+    "loss_prob": 27.5,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 51.4,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 46.5
+   },
+   "version": "7bcd72b"
+  },
+  "72221314": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 11.5"
+   },
+   "corners": {
+    "away_expected": 4.0,
+    "home_expected": 4.0,
+    "over_8_5_prob": 41.0,
+    "over_9_5_prob": 31.4,
+    "total_expected": 8.0
+   },
+   "gameweek": 7,
+   "goals": {
+    "away_xg": 1.29,
+    "btts_prob": 60.5,
+    "draw_prob": 25.0,
+    "home_xg": 1.76,
+    "loss_prob": 27.5,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 57.8,
+    "recommended_bet": "Over 2.5",
+    "win_prob": 47.5
+   },
+   "version": "7bcd72b"
+  },
+  "72221316": {
+   "corner_tips": {
+    "classic": "Over 7.5",
+    "tight": "Over 7.5"
+   },
+   "corners": {
+    "away_expected": 4.1,
+    "home_expected": 5.4,
+    "over_8_5_prob": 58.1,
+    "over_9_5_prob": 47.3,
+    "total_expected": 9.5
+   },
+   "gameweek": 7,
+   "goals": {
+    "away_xg": 0.93,
+    "btts_prob": 56.1,
+    "draw_prob": 18.3,
+    "home_xg": 2.47,
+    "loss_prob": 11.7,
+    "most_likely_score": "2\u20130",
+    "over_2_5_prob": 65.5,
+    "recommended_bet": "Over 2.5",
+    "win_prob": 70.1
+   },
+   "version": "7bcd72b"
+  },
+  "72221318": {
+   "corner_tips": {
+    "classic": "Over 8.5",
+    "tight": "Over 7.5"
+   },
+   "corners": {
+    "away_expected": 5.0,
+    "home_expected": 5.2,
+    "over_8_5_prob": 65.8,
+    "over_9_5_prob": 55.5,
+    "total_expected": 10.2
+   },
+   "gameweek": 7,
+   "goals": {
+    "away_xg": 1.39,
+    "btts_prob": 63.3,
+    "draw_prob": 23.6,
+    "home_xg": 1.89,
+    "loss_prob": 27.3,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 62.5,
+    "recommended_bet": "Over 2.5",
+    "win_prob": 49.1
+   },
+   "version": "7bcd72b"
+  },
+  "72221320": {
+   "corner_tips": {
+    "classic": "Over 7.5",
+    "tight": "Over 7.5"
+   },
+   "corners": {
+    "away_expected": 4.0,
+    "home_expected": 5.7,
+    "over_8_5_prob": 59.7,
+    "over_9_5_prob": 49.0,
+    "total_expected": 9.7
+   },
+   "gameweek": 7,
+   "goals": {
+    "away_xg": 1.27,
+    "btts_prob": 54.7,
+    "draw_prob": 26.7,
+    "home_xg": 1.36,
+    "loss_prob": 35.4,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 49.8,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 37.9
+   },
+   "version": "7bcd72b"
+  },
+  "72221322": {
+   "corner_tips": {
+    "classic": "Over 7.5",
+    "tight": "Under 12.5"
+   },
+   "corners": {
+    "away_expected": 5.3,
+    "home_expected": 3.8,
+    "over_8_5_prob": 52.7,
+    "over_9_5_prob": 42.0,
+    "total_expected": 9.0
+   },
+   "gameweek": 7,
+   "goals": {
+    "away_xg": 1.53,
+    "btts_prob": 59.4,
+    "draw_prob": 25.6,
+    "home_xg": 1.39,
+    "loss_prob": 39.7,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 56.4,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 34.7
+   },
+   "version": "7bcd72b"
+  },
+  "72221324": {
+   "corner_tips": {
+    "classic": "Over 8.5",
+    "tight": "Over 7.5"
+   },
+   "corners": {
+    "away_expected": 3.6,
+    "home_expected": 6.5,
+    "over_8_5_prob": 64.9,
+    "over_9_5_prob": 54.2,
+    "total_expected": 10.1
+   },
+   "gameweek": 7,
+   "goals": {
+    "away_xg": 0.87,
+    "btts_prob": 54.0,
+    "draw_prob": 16.3,
+    "home_xg": 2.51,
+    "loss_prob": 10.6,
+    "most_likely_score": "2\u20130",
+    "over_2_5_prob": 66.1,
+    "recommended_bet": "Over 2.5",
+    "win_prob": 73.1
+   },
+   "version": "7bcd72b"
+  },
+  "72221326": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 12.5"
+   },
+   "corners": {
+    "away_expected": 4.5,
+    "home_expected": 4.2,
+    "over_8_5_prob": 49.3,
+    "over_9_5_prob": 38.1,
+    "total_expected": 8.6
+   },
+   "gameweek": 7,
+   "goals": {
+    "away_xg": 1.38,
+    "btts_prob": 62.6,
+    "draw_prob": 23.8,
+    "home_xg": 1.75,
+    "loss_prob": 30.5,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 61.1,
+    "recommended_bet": "Over 2.5",
+    "win_prob": 45.7
+   },
+   "version": "7bcd72b"
+  },
+  "72221328": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 11.5"
+   },
+   "corners": {
+    "away_expected": 4.3,
+    "home_expected": 3.4,
+    "over_8_5_prob": 38.6,
+    "over_9_5_prob": 28.8,
+    "total_expected": 7.7
+   },
+   "gameweek": 7,
+   "goals": {
+    "away_xg": 1.27,
+    "btts_prob": 45.3,
+    "draw_prob": 29.2,
+    "home_xg": 1.0,
+    "loss_prob": 42.2,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 39.9,
+    "recommended_bet": "Under 3.5",
+    "win_prob": 28.6
+   },
+   "version": "7bcd72b"
+  },
+  "72221330": {
+   "corner_tips": {
+    "classic": "Over 7.5",
+    "tight": "Over 7.5"
+   },
+   "corners": {
+    "away_expected": 3.8,
+    "home_expected": 5.8,
+    "over_8_5_prob": 58.2,
+    "over_9_5_prob": 47.5,
+    "total_expected": 9.5
+   },
+   "gameweek": 7,
+   "goals": {
+    "away_xg": 1.06,
+    "btts_prob": 50.3,
+    "draw_prob": 27.8,
+    "home_xg": 1.44,
+    "loss_prob": 26.6,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 44.7,
+    "recommended_bet": "Under 3.5",
+    "win_prob": 45.6
+   },
+   "version": "7bcd72b"
+  },
+  "72221332": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 12.5"
+   },
+   "corners": {
+    "away_expected": 4.2,
+    "home_expected": 4.7,
+    "over_8_5_prob": 52.0,
+    "over_9_5_prob": 41.7,
+    "total_expected": 8.9
+   },
+   "gameweek": 8,
+   "goals": {
+    "away_xg": 0.83,
+    "btts_prob": 46.1,
+    "draw_prob": 25.3,
+    "home_xg": 1.66,
+    "loss_prob": 18.1,
+    "most_likely_score": "1\u20130",
+    "over_2_5_prob": 45.3,
+    "recommended_bet": "Under 3.5",
+    "win_prob": 56.6
+   },
+   "version": "7bcd72b"
+  },
+  "72221334": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 11.5"
+   },
+   "corners": {
+    "away_expected": 4.7,
+    "home_expected": 3.2,
+    "over_8_5_prob": 39.3,
+    "over_9_5_prob": 29.3,
+    "total_expected": 7.9
+   },
+   "gameweek": 8,
+   "goals": {
+    "away_xg": 1.89,
+    "btts_prob": 56.0,
+    "draw_prob": 23.5,
+    "home_xg": 1.06,
+    "loss_prob": 55.6,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 56.5,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 21.0
+   },
+   "version": "7bcd72b"
+  },
+  "72221336": {
+   "corner_tips": {
+    "classic": "Over 8.5",
+    "tight": "Over 8.5"
+   },
+   "corners": {
+    "away_expected": 6.0,
+    "home_expected": 4.9,
+    "over_8_5_prob": 71.9,
+    "over_9_5_prob": 62.3,
+    "total_expected": 10.9
+   },
+   "gameweek": 8,
+   "goals": {
+    "away_xg": 1.14,
+    "btts_prob": 58.4,
+    "draw_prob": 22.8,
+    "home_xg": 1.95,
+    "loss_prob": 21.1,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 60.0,
+    "recommended_bet": "Over 2.5",
+    "win_prob": 56.1
+   },
+   "version": "7bcd72b"
+  },
+  "72221338": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 12.5"
+   },
+   "corners": {
+    "away_expected": 5.3,
+    "home_expected": 3.6,
+    "over_8_5_prob": 51.8,
+    "over_9_5_prob": 40.8,
+    "total_expected": 8.9
+   },
+   "gameweek": 8,
+   "goals": {
+    "away_xg": 1.38,
+    "btts_prob": 54.9,
+    "draw_prob": 28.4,
+    "home_xg": 1.24,
+    "loss_prob": 39.2,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 49.3,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 32.3
+   },
+   "version": "7bcd72b"
+  },
+  "72221340": {
+   "corner_tips": {
+    "classic": "Over 7.5",
+    "tight": "Over 7.5"
+   },
+   "corners": {
+    "away_expected": 4.9,
+    "home_expected": 4.5,
+    "over_8_5_prob": 57.2,
+    "over_9_5_prob": 45.8,
+    "total_expected": 9.4
+   },
+   "gameweek": 8,
+   "goals": {
+    "away_xg": 1.57,
+    "btts_prob": 61.5,
+    "draw_prob": 25.5,
+    "home_xg": 1.44,
+    "loss_prob": 40.1,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 57.9,
+    "recommended_bet": "Over 2.5",
+    "win_prob": 34.4
+   },
+   "version": "7bcd72b"
+  },
+  "72221342": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 12.5"
+   },
+   "corners": {
+    "away_expected": 4.9,
+    "home_expected": 4.1,
+    "over_8_5_prob": 52.1,
+    "over_9_5_prob": 41.3,
+    "total_expected": 9.0
+   },
+   "gameweek": 8,
+   "goals": {
+    "away_xg": 1.37,
+    "btts_prob": 54.4,
+    "draw_prob": 27.2,
+    "home_xg": 1.31,
+    "loss_prob": 38.0,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 49.6,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 34.8
+   },
+   "version": "7bcd72b"
+  },
+  "72221344": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 12.5"
+   },
+   "corners": {
+    "away_expected": 5.1,
+    "home_expected": 3.7,
+    "over_8_5_prob": 51.9,
+    "over_9_5_prob": 41.4,
+    "total_expected": 8.9
+   },
+   "gameweek": 8,
+   "goals": {
+    "away_xg": 1.36,
+    "btts_prob": 52.8,
+    "draw_prob": 27.2,
+    "home_xg": 1.26,
+    "loss_prob": 38.5,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 48.4,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 34.3
+   },
+   "version": "7bcd72b"
+  },
+  "72221346": {
+   "corner_tips": {
+    "classic": "Over 8.5",
+    "tight": "Over 8.5"
+   },
+   "corners": {
+    "away_expected": 5.0,
+    "home_expected": 5.5,
+    "over_8_5_prob": 67.7,
+    "over_9_5_prob": 57.6,
+    "total_expected": 10.5
+   },
+   "gameweek": 8,
+   "goals": {
+    "away_xg": 1.77,
+    "btts_prob": 62.7,
+    "draw_prob": 24.3,
+    "home_xg": 1.38,
+    "loss_prob": 45.7,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 61.0,
+    "recommended_bet": "Over 2.5",
+    "win_prob": 30.0
+   },
+   "version": "7bcd72b"
+  },
+  "72221348": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 12.5"
+   },
+   "corners": {
+    "away_expected": 3.7,
+    "home_expected": 4.7,
+    "over_8_5_prob": 45.6,
+    "over_9_5_prob": 35.3,
+    "total_expected": 8.4
+   },
+   "gameweek": 8,
+   "goals": {
+    "away_xg": 1.35,
+    "btts_prob": 65.2,
+    "draw_prob": 22.2,
+    "home_xg": 2.03,
+    "loss_prob": 25.0,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 66.6,
+    "recommended_bet": "Over 2.5",
+    "win_prob": 52.8
+   },
+   "version": "7bcd72b"
+  },
+  "72221350": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 11.5"
+   },
+   "corners": {
+    "away_expected": 3.7,
+    "home_expected": 3.9,
+    "over_8_5_prob": 35.8,
+    "over_9_5_prob": 26.4,
+    "total_expected": 7.5
+   },
+   "gameweek": 8,
+   "goals": {
+    "away_xg": 1.28,
+    "btts_prob": 48.9,
+    "draw_prob": 29.2,
+    "home_xg": 1.11,
+    "loss_prob": 39.0,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 42.3,
+    "recommended_bet": "Under 3.5",
+    "win_prob": 31.8
+   },
+   "version": "7bcd72b"
+  },
+  "72221352": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 12.5"
+   },
+   "corners": {
+    "away_expected": 5.2,
+    "home_expected": 3.3,
+    "over_8_5_prob": 47.1,
+    "over_9_5_prob": 36.4,
+    "total_expected": 8.5
+   },
+   "gameweek": 9,
+   "goals": {
+    "away_xg": 1.18,
+    "btts_prob": 52.5,
+    "draw_prob": 27.1,
+    "home_xg": 1.4,
+    "loss_prob": 31.3,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 48.3,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 41.6
+   },
+   "version": "7bcd72b"
+  },
+  "72221354": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 11.5"
+   },
+   "corners": {
+    "away_expected": 3.6,
+    "home_expected": 4.0,
+    "over_8_5_prob": 36.0,
+    "over_9_5_prob": 26.8,
+    "total_expected": 7.6
+   },
+   "gameweek": 9,
+   "goals": {
+    "away_xg": 1.16,
+    "btts_prob": 55.4,
+    "draw_prob": 26.6,
+    "home_xg": 1.58,
+    "loss_prob": 27.1,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 51.1,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 46.3
+   },
+   "version": "7bcd72b"
+  },
+  "72221356": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 12.5"
+   },
+   "corners": {
+    "away_expected": 4.7,
+    "home_expected": 3.8,
+    "over_8_5_prob": 47.9,
+    "over_9_5_prob": 37.2,
+    "total_expected": 8.5
+   },
+   "gameweek": 9,
+   "goals": {
+    "away_xg": 1.2,
+    "btts_prob": 55.8,
+    "draw_prob": 25.9,
+    "home_xg": 1.53,
+    "loss_prob": 29.7,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 52.3,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 44.5
+   },
+   "version": "7bcd72b"
+  },
+  "72221358": {
+   "corner_tips": {
+    "classic": "Over 7.5",
+    "tight": "Over 7.5"
+   },
+   "corners": {
+    "away_expected": 5.8,
+    "home_expected": 4.2,
+    "over_8_5_prob": 63.7,
+    "over_9_5_prob": 53.1,
+    "total_expected": 10.0
+   },
+   "gameweek": 9,
+   "goals": {
+    "away_xg": 1.65,
+    "btts_prob": 66.1,
+    "draw_prob": 23.3,
+    "home_xg": 1.74,
+    "loss_prob": 36.2,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 64.9,
+    "recommended_bet": "Over 2.5",
+    "win_prob": 40.5
+   },
+   "version": "7bcd72b"
+  },
+  "72221360": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 11.5"
+   },
+   "corners": {
+    "away_expected": 4.2,
+    "home_expected": 3.6,
+    "over_8_5_prob": 38.8,
+    "over_9_5_prob": 28.9,
+    "total_expected": 7.8
+   },
+   "gameweek": 9,
+   "goals": {
+    "away_xg": 1.12,
+    "btts_prob": 48.3,
+    "draw_prob": 29.0,
+    "home_xg": 1.24,
+    "loss_prob": 32.6,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 42.4,
+    "recommended_bet": "Under 3.5",
+    "win_prob": 38.4
+   },
+   "version": "7bcd72b"
+  },
+  "72221362": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 12.5"
+   },
+   "corners": {
+    "away_expected": 4.1,
+    "home_expected": 4.5,
+    "over_8_5_prob": 48.8,
+    "over_9_5_prob": 38.4,
+    "total_expected": 8.6
+   },
+   "gameweek": 9,
+   "goals": {
+    "away_xg": 1.06,
+    "btts_prob": 51.0,
+    "draw_prob": 26.0,
+    "home_xg": 1.52,
+    "loss_prob": 25.9,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 48.0,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 48.1
+   },
+   "version": "7bcd72b"
+  },
+  "72221364": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 12.5"
+   },
+   "corners": {
+    "away_expected": 4.5,
+    "home_expected": 4.0,
+    "over_8_5_prob": 46.9,
+    "over_9_5_prob": 36.6,
+    "total_expected": 8.5
+   },
+   "gameweek": 9,
+   "goals": {
+    "away_xg": 1.32,
+    "btts_prob": 48.9,
+    "draw_prob": 28.6,
+    "home_xg": 1.1,
+    "loss_prob": 40.9,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 43.4,
+    "recommended_bet": "Under 3.5",
+    "win_prob": 30.5
+   },
+   "version": "7bcd72b"
+  },
+  "72221366": {
+   "corner_tips": {
+    "classic": "Over 8.5",
+    "tight": "Over 8.5"
+   },
+   "corners": {
+    "away_expected": 4.5,
+    "home_expected": 5.9,
+    "over_8_5_prob": 66.0,
+    "over_9_5_prob": 55.7,
+    "total_expected": 10.4
+   },
+   "gameweek": 9,
+   "goals": {
+    "away_xg": 1.41,
+    "btts_prob": 63.8,
+    "draw_prob": 23.4,
+    "home_xg": 1.81,
+    "loss_prob": 29.2,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 62.0,
+    "recommended_bet": "Over 2.5",
+    "win_prob": 47.3
+   },
+   "version": "7bcd72b"
+  },
+  "72221368": {
+   "corner_tips": {
+    "classic": "Over 8.5",
+    "tight": "Over 8.5"
+   },
+   "corners": {
+    "away_expected": 5.8,
+    "home_expected": 5.0,
+    "over_8_5_prob": 69.8,
+    "over_9_5_prob": 60.1,
+    "total_expected": 10.8
+   },
+   "gameweek": 9,
+   "goals": {
+    "away_xg": 1.34,
+    "btts_prob": 58.0,
+    "draw_prob": 24.8,
+    "home_xg": 1.56,
+    "loss_prob": 32.7,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 55.6,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 42.5
+   },
+   "version": "7bcd72b"
+  },
+  "72221370": {
+   "corner_tips": {
+    "classic": "Over 7.5",
+    "tight": "Over 7.5"
+   },
+   "corners": {
+    "away_expected": 3.6,
+    "home_expected": 6.1,
+    "over_8_5_prob": 59.9,
+    "over_9_5_prob": 48.9,
+    "total_expected": 9.7
+   },
+   "gameweek": 9,
+   "goals": {
+    "away_xg": 0.96,
+    "btts_prob": 50.3,
+    "draw_prob": 24.3,
+    "home_xg": 1.74,
+    "loss_prob": 20.3,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 50.0,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 55.4
+   },
+   "version": "7bcd72b"
+  },
+  "72221372": {
+   "corner_tips": {
+    "classic": "Over 7.5",
+    "tight": "Over 7.5"
+   },
+   "corners": {
+    "away_expected": 3.7,
+    "home_expected": 5.8,
+    "over_8_5_prob": 58.1,
+    "over_9_5_prob": 47.1,
+    "total_expected": 9.5
+   },
+   "gameweek": 10,
+   "goals": {
+    "away_xg": 0.65,
+    "btts_prob": 39.9,
+    "draw_prob": 25.4,
+    "home_xg": 1.66,
+    "loss_prob": 13.8,
+    "most_likely_score": "1\u20130",
+    "over_2_5_prob": 40.9,
+    "recommended_bet": "Under 3.5",
+    "win_prob": 60.8
+   },
+   "version": "7bcd72b"
+  },
+  "72221374": {
+   "corner_tips": {
+    "classic": "Over 7.5",
+    "tight": "Over 7.5"
+   },
+   "corners": {
+    "away_expected": 4.8,
+    "home_expected": 4.9,
+    "over_8_5_prob": 59.6,
+    "over_9_5_prob": 48.3,
+    "total_expected": 9.7
+   },
+   "gameweek": 10,
+   "goals": {
+    "away_xg": 1.16,
+    "btts_prob": 60.6,
+    "draw_prob": 21.8,
+    "home_xg": 2.08,
+    "loss_prob": 19.7,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 62.9,
+    "recommended_bet": "Over 2.5",
+    "win_prob": 58.6
+   },
+   "version": "7bcd72b"
+  },
+  "72221376": {
+   "corner_tips": {
+    "classic": "Over 7.5",
+    "tight": "Over 7.5"
+   },
+   "corners": {
+    "away_expected": 6.1,
+    "home_expected": 3.1,
+    "over_8_5_prob": 55.6,
+    "over_9_5_prob": 44.5,
+    "total_expected": 9.3
+   },
+   "gameweek": 10,
+   "goals": {
+    "away_xg": 1.72,
+    "btts_prob": 54.6,
+    "draw_prob": 25.4,
+    "home_xg": 1.07,
+    "loss_prob": 51.3,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 52.9,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 23.3
+   },
+   "version": "7bcd72b"
+  },
+  "72221378": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 12.5"
+   },
+   "corners": {
+    "away_expected": 4.4,
+    "home_expected": 4.5,
+    "over_8_5_prob": 52.2,
+    "over_9_5_prob": 41.9,
+    "total_expected": 8.9
+   },
+   "gameweek": 10,
+   "goals": {
+    "away_xg": 0.97,
+    "btts_prob": 52.2,
+    "draw_prob": 24.0,
+    "home_xg": 1.8,
+    "loss_prob": 19.5,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 51.8,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 56.5
+   },
+   "version": "7bcd72b"
+  },
+  "72221380": {
+   "corner_tips": {
+    "classic": "Over 8.5",
+    "tight": "Over 8.5"
+   },
+   "corners": {
+    "away_expected": 4.1,
+    "home_expected": 6.8,
+    "over_8_5_prob": 72.7,
+    "over_9_5_prob": 62.6,
+    "total_expected": 10.9
+   },
+   "gameweek": 10,
+   "goals": {
+    "away_xg": 1.19,
+    "btts_prob": 57.1,
+    "draw_prob": 25.8,
+    "home_xg": 1.66,
+    "loss_prob": 26.7,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 54.1,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 47.5
+   },
+   "version": "7bcd72b"
+  },
+  "72221382": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 11.5"
+   },
+   "corners": {
+    "away_expected": 5.0,
+    "home_expected": 2.9,
+    "over_8_5_prob": 39.8,
+    "over_9_5_prob": 29.6,
+    "total_expected": 7.9
+   },
+   "gameweek": 10,
+   "goals": {
+    "away_xg": 1.59,
+    "btts_prob": 61.6,
+    "draw_prob": 25.1,
+    "home_xg": 1.44,
+    "loss_prob": 40.3,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 58.7,
+    "recommended_bet": "Over 2.5",
+    "win_prob": 34.6
+   },
+   "version": "7bcd72b"
+  },
+  "72221384": {
+   "corner_tips": {
+    "classic": "Over 7.5",
+    "tight": "Over 7.5"
+   },
+   "corners": {
+    "away_expected": 5.8,
+    "home_expected": 3.5,
+    "over_8_5_prob": 55.0,
+    "over_9_5_prob": 44.0,
+    "total_expected": 9.3
+   },
+   "gameweek": 10,
+   "goals": {
+    "away_xg": 1.12,
+    "btts_prob": 48.1,
+    "draw_prob": 30.0,
+    "home_xg": 1.23,
+    "loss_prob": 32.0,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 40.9,
+    "recommended_bet": "Under 3.5",
+    "win_prob": 38.0
+   },
+   "version": "7bcd72b"
+  },
+  "72221386": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 12.5"
+   },
+   "corners": {
+    "away_expected": 3.4,
+    "home_expected": 5.4,
+    "over_8_5_prob": 49.5,
+    "over_9_5_prob": 38.8,
+    "total_expected": 8.8
+   },
+   "gameweek": 10,
+   "goals": {
+    "away_xg": 1.19,
+    "btts_prob": 59.6,
+    "draw_prob": 24.3,
+    "home_xg": 1.86,
+    "loss_prob": 23.1,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 58.5,
+    "recommended_bet": "Over 2.5",
+    "win_prob": 52.5
+   },
+   "version": "7bcd72b"
+  },
+  "72221388": {
+   "corner_tips": {
+    "classic": "Under 11.5",
+    "tight": "Under 12.5"
+   },
+   "corners": {
+    "away_expected": 4.7,
+    "home_expected": 3.8,
+    "over_8_5_prob": 48.2,
+    "over_9_5_prob": 38.1,
+    "total_expected": 8.6
+   },
+   "gameweek": 10,
+   "goals": {
+    "away_xg": 1.49,
+    "btts_prob": 53.3,
+    "draw_prob": 26.9,
+    "home_xg": 1.14,
+    "loss_prob": 44.6,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 49.4,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 28.6
+   },
+   "version": "7bcd72b"
+  },
+  "72221390": {
+   "corner_tips": {
+    "classic": "Over 7.5",
+    "tight": "Over 7.5"
+   },
+   "corners": {
+    "away_expected": 4.8,
+    "home_expected": 4.6,
+    "over_8_5_prob": 56.0,
+    "over_9_5_prob": 45.6,
+    "total_expected": 9.4
+   },
+   "gameweek": 10,
+   "goals": {
+    "away_xg": 1.55,
+    "btts_prob": 58.2,
+    "draw_prob": 24.8,
+    "home_xg": 1.32,
+    "loss_prob": 42.0,
+    "most_likely_score": "1\u20131",
+    "over_2_5_prob": 55.2,
+    "recommended_bet": "Over 1.5",
+    "win_prob": 33.2
+   },
+   "version": "7bcd72b"
+  }
+ },
+ "versions": [
+  {
+   "commit": "7bcd72b",
+   "corner_strategies": [
+    "classic",
+    "tight"
+   ],
+   "default_corner_strategy": "tight",
+   "frozen_at": "2026-11-12T09:08:59+00:00",
+   "matches": 100
+  }
+ ]
+}
