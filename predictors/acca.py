@@ -134,3 +134,45 @@ def grade_leg(leg, fixtures_by_id):
     if total is None:
         return None
     return (total > line) if direction == 'over' else (total < line)
+
+
+# Lines a golden game chooses between: the site's own tip lines per market.
+GOLDEN_LINES = {
+    'goals': ("Over 1.5", "Under 3.5"),
+    'corners': ("Over 7.5", "Under 12.5"),
+}
+
+
+def build_golden(candidates):
+    """The gameweek's golden games: per market, the single fixture and line the
+    model rates most likely to land. Returns {'goals': leg, 'corners': leg}, a
+    market missing when no fixture can price it.
+
+    Each candidate needs match_id, home_team, away_team and over_lines:
+    {'goals': {line: P(over) %}, 'corners': {line: P(over) %}}. The goals and
+    corners picks are chosen independently, so they can share a fixture.
+    experiments/golden_backtest.py measures how often they land.
+    """
+    from predictors.tips import has_lines, most_likely_tip, tip_probability
+
+    golden = {}
+    for market, tips in GOLDEN_LINES.items():
+        best = None
+        for c in candidates:
+            lines = c['over_lines'].get(market)
+            if not has_lines(tips, lines):
+                continue
+            tip = most_likely_tip(tips, lines)
+            prob = tip_probability(tip, lines)
+            if best is None or prob > best[0]:
+                best = (prob, c, tip)
+        if best:
+            prob, c, tip = best
+            golden[market] = {
+                'match_id': c['match_id'],
+                'match': f"{c['home_team']} vs {c['away_team']}",
+                'pick': f"{tip} {market.capitalize()}",
+                'probability': round(prob, 1),
+                'reason': f"Model's most likely {market} tip this week ({prob:.0f}%)",
+            }
+    return golden

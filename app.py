@@ -6,7 +6,7 @@ from flask import Flask, jsonify, request, send_from_directory
 from db.database import get_db, db_version
 from predictors.goals import predict_goals, goal_tip
 import json
-from predictors.acca import build_accas, grade_leg
+from predictors.acca import build_accas, build_golden, grade_leg
 from predictors.corners import predict_corners, corner_tip, CORNER_STRATEGIES, DEFAULT_CORNER_STRATEGY
 
 app = Flask(__name__, static_folder='static')
@@ -54,6 +54,8 @@ def ads_txt():
 EPL_COMPETITION = 'epl_2026'
 EPL_MATCHES_PER_GW = 10
 FINISHED = ('FT', 'AET', 'PEN')
+# Golden games went live this gameweek; earlier ones are backtested picks.
+GOLDEN_FIRST_GW = 11
 
 
 @app.route('/api/epl/gameweeks')
@@ -185,8 +187,9 @@ def _published_fixture(match_id, strategy):
     return dict(entry['goals']), {**entry['corners'], 'recommended_bet': tip}
 
 
-def _live_fixture(match, strategy):
-    """(goals, corners) from the current model, or None if it can't price the match."""
+def _predict_match(match):
+    """(goal prediction, corner prediction) from the current model, or None if it
+    can't price the match."""
     home_name, away_name = match['home'], match['away']
     # Once a match has kicked off, predict it from data before kickoff only:
     # the live ratings already contain its result, so grading a tip made
@@ -200,6 +203,13 @@ def _live_fixture(match, strategy):
         return None
     if not gp or not cp:
         return None
+    return gp, cp
+
+
+def _live_fixture(match, strategy, prediction):
+    """(goals, corners) as the page shows them, from _predict_match's prediction."""
+    home_name, away_name = match['home'], match['away']
+    gp, cp = prediction
 
     res = gp['results']
     h, d, a = res['home_win_prob'], res['draw_prob'], res['away_win_prob']
@@ -353,9 +363,20 @@ def _build_gameweek(gw, strategy):
         return None
 
     fixtures = []
+    golden_candidates = []
     for match in matches:
-        predicted = _published_fixture(match['id'], strategy) or _live_fixture(match, strategy)
-        if predicted is None:
+        # Golden games need every line's probability, which the frozen record
+        # does not keep, so played matches are re-priced from pre-kickoff data.
+        prediction = _predict_match(match)
+        if prediction:
+            golden_candidates.append({
+                'match_id': match['id'], 'home_team': match['home'], 'away_team': match['away'],
+                'over_lines': {'goals': prediction[0]['results']['over_lines'],
+                               'corners': prediction[1]['results']['over_lines']},
+            })
+        predicted = _published_fixture(match['id'], strategy) or (
+            prediction and _live_fixture(match, strategy, prediction))
+        if not predicted:
             continue
         goals, corners = predicted
         fixture = {
@@ -387,11 +408,13 @@ def _build_gameweek(gw, strategy):
     acca, corner_acca_legs = build_accas(fixtures)
 
     fixtures_by_id = {f['match_id']: f for f in fixtures}
-    for leg in acca + corner_acca_legs:
+    golden = build_golden(golden_candidates)
+    for leg in acca + corner_acca_legs + list(golden.values()):
         leg['won'] = grade_leg(leg, fixtures_by_id)
 
     return {'gameweek': gw, 'corner_strategy': strategy, 'fixtures': fixtures, 'record': _gameweek_record(fixtures),
-            'acca': acca, 'corner_acca': corner_acca_legs}
+            'acca': acca, 'corner_acca': corner_acca_legs,
+            'golden': golden, 'golden_backtested': gw < GOLDEN_FIRST_GW}
 
 
 @app.route('/api/predictions')

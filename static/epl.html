@@ -540,10 +540,15 @@ function fixtureHTML(f) {
     </details>`;
 }
 
-function accaCardHTML(title, sub, legs) {
+function accaCardHTML(title, sub, legs, singles = false) {
     if (!legs || !legs.length) return '';
+    // Golden games are two singles, so the card badge counts legs that landed.
+    const graded = legs.filter(l => l.won === true || l.won === false);
+    const wonLegs = graded.filter(l => l.won).length;
     const result = accaResult(legs);
-    const badge = result === 'Won' ? '<span class="badge won">✓ Won</span>'
+    const badge = singles
+        ? (graded.length ? `<span class="badge ${wonLegs === graded.length ? 'won' : wonLegs ? '' : 'lost'}">${wonLegs}/${graded.length} landed</span>` : '<span class="badge">Pending</span>')
+        : result === 'Won' ? '<span class="badge won">✓ Won</span>'
         : result === 'Lost' ? '<span class="badge lost">✗ Lost</span>'
         : '<span class="badge">Pending</span>';
     return `
@@ -560,8 +565,20 @@ function accaCardHTML(title, sub, legs) {
     </div>`;
 }
 
+function goldenLegs(golden) {
+    return golden ? ['goals', 'corners'].filter(m => golden[m]).map(m => golden[m]) : [];
+}
+
+function goldenCardHTML(data) {
+    const legs = goldenLegs(data.golden);
+    if (!legs.length) return '';
+    const sub = 'The single goals tip and corners tip the model rates most likely to land this matchweek.'
+        + (data.golden_backtested ? ' Backtested: golden games went live in Matchweek 11.' : '');
+    return accaCardHTML('Golden Games', sub, legs, true);
+}
+
 function renderAccas(data) {
-    const html = accaCardHTML('Ultimate 3-Leg Acca', 'Goals and corner lines, one leg per fixture.', data.acca)
+    const html = goldenCardHTML(data) + accaCardHTML('Ultimate 3-Leg Acca', 'Goals and corner lines, one leg per fixture.', data.acca)
         + accaCardHTML('Optimum 3-Corner Acca', 'Three corner lines from the matchweek\'s extremes.', data.corner_acca);
     $('accas').innerHTML = html || '<div class="card">' + emptyState('No accas this matchweek', 'No picks cleared the model\'s confidence bar.') + '</div>';
 }
@@ -616,6 +633,7 @@ async function fetchPlayedGameweeks(onProgress) {
             fixtures: data.fixtures.filter(f => f.actual),
             acca: data.acca || [],
             corner_acca: data.corner_acca || [],
+            golden: goldenLegs(data.golden),
         }));
 }
 
@@ -688,10 +706,10 @@ function accaResult(legs) {
     return betResult(legs.every(l => l.won));
 }
 
-function accaTableHTML(title, legs) {
+function accaTableHTML(title, legs, singles = false) {
     if (!legs || legs.length === 0) return '';
     const rows = legs.map(l => `<tr><td>${esc(l.match)}</td><td><b>${esc(l.pick)}</b></td><td>${esc(l.reason)}</td><td>${resultSpan(betResult(l.won))}</td></tr>`).join('');
-    const overall = accaResult(legs);
+    const overall = singles ? '' : accaResult(legs);
     return `<h3>${esc(title)}${overall ? ` — ${resultSpan(overall)}` : ''}</h3>
         <table><tr><th>Match</th><th>Pick</th><th>Reason</th><th>Result</th></tr>${rows}</table>`;
 }
@@ -718,20 +736,25 @@ function fixturesTableHTML(rows) {
 }
 
 function summaryTableHTML(sets) {
-    const line = (label, rows, accaCell, cornerAccaCell) => `<tr>
+    const goldenResult = (s, market) => {
+        const leg = (s.golden || []).find(l => l.pick.endsWith(market));
+        return leg ? betResult(leg.won) : '';
+    };
+    const line = (label, rows, cells) => `<tr>
         <td><b>${label}</b></td><td>${rows.length}</td>
         <td>${record(rows.map(r => r['Model Pick Result']))}</td>
         <td>${record(rows.map(r => r['Goal Tip Result']))}</td>
         <td>${record(rows.map(r => r['Corner Tip Result']))}</td>
-        <td>${accaCell}</td>
-        <td>${cornerAccaCell}</td>
+        ${cells.map(c => `<td>${c}</td>`).join('')}
     </tr>`;
-    const body = sets.map(s => line(`GW ${s.gw}`, exportRows([s]),
-        resultSpan(accaResult(s.acca)) || '–', resultSpan(accaResult(s.corner_acca)) || '–')).join('');
-    const total = line('Total', exportRows(sets),
-        record(sets.map(s => accaResult(s.acca))), record(sets.map(s => accaResult(s.corner_acca))));
+    const body = sets.map(s => line(`GW ${s.gw}`, exportRows([s]), [
+        resultSpan(goldenResult(s, 'Goals')) || '–', resultSpan(goldenResult(s, 'Corners')) || '–',
+        resultSpan(accaResult(s.acca)) || '–', resultSpan(accaResult(s.corner_acca)) || '–'])).join('');
+    const total = line('Total', exportRows(sets), [
+        record(sets.map(s => goldenResult(s, 'Goals'))), record(sets.map(s => goldenResult(s, 'Corners'))),
+        record(sets.map(s => accaResult(s.acca))), record(sets.map(s => accaResult(s.corner_acca)))]);
     return `<table>
-        <tr><th>Gameweek</th><th>Played</th><th>Model 1X2 pick</th><th>Goal tips</th><th>Corner tips</th><th>3-leg acca</th><th>Corner acca</th></tr>
+        <tr><th>Gameweek</th><th>Played</th><th>Model 1X2 pick</th><th>Goal tips</th><th>Corner tips</th><th>Golden goals</th><th>Golden corners</th><th>3-leg acca</th><th>Corner acca</th></tr>
         ${body}${total}
     </table>`;
 }
@@ -743,6 +766,7 @@ function exportDocumentHTML(scope, sets, forWord) {
         : `Gameweek ${sets[0].gw} Predictions`;
     const sections = sets.map(s => `
         ${scope === 'played' ? `<h2>Gameweek ${s.gw}</h2>` : ''}
+        ${accaTableHTML('Golden Games', s.golden, true)}
         ${accaTableHTML('Ultimate 3-Leg Acca', s.acca)}
         ${accaTableHTML('Optimum 3-Corner Acca', s.corner_acca)}
         <h3>Fixtures</h3>
@@ -829,7 +853,7 @@ async function runExport(scope, format, btn) {
         } else {
             const data = await fetchGameweek(currentGW);
             sets = data && data.fixtures.length
-                ? [{ gw: currentGW, fixtures: data.fixtures, acca: data.acca || [], corner_acca: data.corner_acca || [] }]
+                ? [{ gw: currentGW, fixtures: data.fixtures, acca: data.acca || [], corner_acca: data.corner_acca || [], golden: goldenLegs(data.golden) }]
                 : [];
         }
         if (!sets.length) {
