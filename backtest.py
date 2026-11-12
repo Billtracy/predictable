@@ -8,8 +8,9 @@ import numpy as np
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from db.database import get_db
-from predictors.corners import predict_corners
-from predictors.goals import predict_goals
+from predictors.corners import DEFAULT_CORNER_STRATEGY, corner_tip, predict_corners
+from predictors.goals import goal_tip, predict_goals
+from predictors.tips import tip_won
 
 # Outcome order used for the probability vector in calibration metrics.
 OUTCOMES = ("home_win", "draw", "away_win")
@@ -79,6 +80,21 @@ class BinaryMarket:
         )
 
 
+def tips_report(name, tips):
+    """tips: [(tip, actual total)]. Hit rate of the tips the site would have shown,
+    next to backing each tipped line blind on every match: a tip rule only adds
+    something if it beats the best of those."""
+    n = len(tips)
+    won = sum(tip_won(tip, actual) for tip, actual in tips)
+    lines = [f"  {name:<18} {won}/{n} = {won / n * 100:.1f}%"]
+    for line in sorted({tip for tip, _ in tips}):
+        picked = [actual for tip, actual in tips if tip == line]
+        hit = sum(tip_won(line, actual) for actual in picked) / len(picked) * 100
+        blind = sum(tip_won(line, actual) for _, actual in tips) / n * 100
+        lines.append(f"    {line:<11} tipped {len(picked):>3}, hit {hit:5.1f}%   (always {line}: {blind:.1f}%)")
+    return "\n".join(lines)
+
+
 def run_backtest(competition_id):
     print(f"Running backtest for {competition_id}...")
 
@@ -118,6 +134,7 @@ def run_backtest(competition_id):
 
     btts_market = BinaryMarket("BTTS")
     over_markets = {line: BinaryMarket(f"Over {line} goals") for line in GOAL_LINES}
+    goal_tips = []
 
     EPS = 1e-15  # keep log-loss finite for zero-probability outcomes
 
@@ -175,6 +192,7 @@ def run_backtest(competition_id):
         )
         for line in GOAL_LINES:
             over_markets[line].add(res["over_lines"][line] / 100.0, actual_total > line)
+        goal_tips.append((goal_tip(pred["home_xg"] + pred["away_xg"], res["over_lines"]), actual_total))
 
         scored += 1
 
@@ -206,6 +224,8 @@ def run_backtest(competition_id):
     print(btts_market.report_line())
     for line in GOAL_LINES:
         print(over_markets[line].report_line())
+    print("-" * 50)
+    print(tips_report("Goals tip", goal_tips))
     print("=" * 50)
 
     run_corners_backtest(competition_id, matches)
@@ -237,6 +257,7 @@ def run_corners_backtest(competition_id, matches):
         return
 
     corner_markets = {line: BinaryMarket(f"Over {line} corners") for line in CORNER_LINES}
+    corner_tips = []
     scored = 0
     skipped = 0
 
@@ -265,6 +286,11 @@ def run_corners_backtest(competition_id, matches):
         over_lines = pred["results"]["over_lines"]
         for line in CORNER_LINES:
             corner_markets[line].add(over_lines[line] / 100.0, actual_total > line)
+        tip = corner_tip(
+            DEFAULT_CORNER_STRATEGY, pred["results"]["total_expected"],
+            match["home_name"], match["away_name"], over_lines,
+        )
+        corner_tips.append((tip, actual_total))
         scored += 1
 
     if scored == 0:
@@ -274,6 +300,8 @@ def run_corners_backtest(competition_id, matches):
     print(f"\nCorner markets ({scored} matches with corner stats; skipped: {skipped}):")
     for line in CORNER_LINES:
         print(corner_markets[line].report_line())
+    print("-" * 50)
+    print(tips_report("Corners tip", corner_tips))
     print("=" * 50)
 
 

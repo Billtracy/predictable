@@ -128,6 +128,14 @@ def get_db():
     finally:
         conn.close()
 
+def db_version():
+    """Changes whenever the database does: a key for caches built from its contents."""
+    # The WAL's size, not its mtime: SQLite recreates it on every open and close,
+    # while writes either grow it or get checkpointed into the main file.
+    wal = DB_PATH + '-wal'
+    return os.path.getmtime(DB_PATH), os.path.getsize(wal) if os.path.exists(wal) else 0
+
+
 if __name__ == "__main__":
     init_db()
     print(f"Database initialized at {DB_PATH}")

@@ -46,6 +46,7 @@ Predictable/
 │
 ├── models/
 │   ├── __init__.py
+│   ├── fitted.py              # Premier League: fitted attack/defence model (goals + corners)
 │   ├── xg_model.py            # Expected Goals model (logistic regression on shot coords)
 │   ├── team_ratings.py        # Computes attack/defense strength per team per competition
 │   └── poisson.py             # Monte Carlo Poisson simulation engine
@@ -53,7 +54,8 @@ Predictable/
 ├── predictors/
 │   ├── __init__.py
 │   ├── goals.py               # Goal prediction orchestrator
-│   └── corners.py             # Corner prediction orchestrator
+│   ├── corners.py             # Corner prediction orchestrator
+│   └── tips.py                # Picks the most likely over/under line
 │
 ├── corner_predictor.py        # [LEGACY] Original corner predictor (kept for reference)
 ├── index.py                   # [LEGACY] Original index script (kept for reference)
@@ -161,6 +163,31 @@ GOALS
 
 ## How the Model Works
 
+There are two models. Premier League seasons use the fitted model below; the World
+Cup competitions use the ratio ratings and Monte Carlo simulation described in
+sections 1-5.
+
+### Premier League: fitted model (`models/fitted.py`)
+
+A competition opts in with a `"league"` key in `config.py`; every season sharing the
+key is one history. The model (shared with the Champions League package,
+`ucl/model.py`) gives each club an attack and a defence strength and fits them, the
+league scoring rate and home advantage by maximum likelihood on every completed
+match before the prediction cutoff, with recent matches weighted more (one-year
+half-life) and each club shrunk toward the league average. It is fitted once on
+goals and once on corner counts. Goal markets come from the exact scoreline grid
+with a Dixon-Coles low-score correction; corner totals from a slightly
+overdispersed count distribution. There is no simulation.
+
+Clubs are matched across seasons by SportRadar id, because the same club can have
+different `teams.id` values in different seasons. A newly promoted club with no
+history is rated as league average.
+
+**Tips.** Each fixture gets one goals tip and one corners tip: the line the model
+rates most likely to land, out of Over 1.5 / Under 3.5 goals and Over 7.5 /
+Under 12.5 corners (`predictors/tips.py`). The older band rules on expected
+corners ("Tight bands", "Classic") are still selectable on the site.
+
 ### 1. Data Collection
 - **API-Sports** provides aggregate stats per match: goals, corners, shots (total/on target/off target), possession, passes, fouls, saves
 - **SportRadar Extended** provides per-event X/Y coordinates on the pitch — specifically shot locations used to build the xG model
@@ -256,9 +283,24 @@ The backtest is **leak-free / point-in-time**: each fixture is predicted using o
 matches played *strictly before* its date, so a team's ratings never "see" results
 that hadn't happened yet. It reports outcome accuracy plus probability-calibration
 metrics (Log Loss, Brier, RPS — lower is better) so you can judge whether the
-*probabilities* themselves are honest, not just the top pick.
+*probabilities* themselves are honest, not just the top pick. It also grades the
+goals and corners tips, next to how often each tipped line lands if backed blind
+on every match: a tip rule only adds something when it beats the best of those.
 
-*EPL 2024 (leak-free): ~49% outcome accuracy, Log Loss ~1.006 / Brier ~0.602 / RPS ~0.209 — all beating the uniform-guess baselines. The World Cup sits near chance because group-stage teams have almost no prior matches to rate them on (an earlier ~51% figure was inflated by look-ahead leakage).*
+Tip hit rates with the fitted model (leak-free):
+
+| Season | Goals tip | Always Over 1.5 | Corners tip | Always Over 7.5 / Under 12.5 |
+|---|---|---|---|---|
+| `epl_2024` | 81.3% (380) | 81.3% | 77.0% (330) | 76.1% / 74.8% |
+| `epl_2025` | 78.4% (380) | 78.9% | 80.8% (380) | 75.3% / 78.4% |
+| `epl_2026` (first 100) | 76.0% | 75.0% | 79.0% | 73.0% / 83.0% |
+
+The gap to the blind lines is small: most of a tip's hit rate comes from the line
+itself. Corners in `epl_2024` start after 50 matches, once there is corner history
+to fit on. `experiments/corner_strategy_compare.py` writes the fuller report the
+site's backtest page shows (`data/corner_strategy_backtest.json`).
+
+*The World Cup sits near chance because group-stage teams have almost no prior matches to rate them on (an earlier ~51% figure was inflated by look-ahead leakage).*
 
 ---
 
@@ -278,6 +320,7 @@ The fetcher skips matches that are already in the database, so re-running a fetc
 ```
 requests        # HTTP client for API calls
 numpy           # Fast random sampling for Monte Carlo simulation
+scipy           # Model fitting and count distributions (fitted model)
 scikit-learn    # Logistic regression for the xG model
 ```
 

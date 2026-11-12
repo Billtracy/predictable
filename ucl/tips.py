@@ -1,6 +1,7 @@
-"""One goals tip and one corners tip per fixture, the same rules the EPL page uses
-(predictors/goals.goal_tip and predictors/corners.recommend_corner_bet, the 'tight'
-default). Copied rather than imported so the UCL package never loads EPL code;
+"""One goals tip and one corners tip per fixture, from the band rules the EPL page
+used before it moved to tipping the most likely line (predictors/goals.goal_tip
+without line probabilities and predictors/corners.recommend_corner_bet, the 'tight'
+bands). Copied rather than imported so the UCL package never loads EPL code;
 ucl/backtest.py reports how they score on UCL games.
 """
 

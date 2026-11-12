@@ -3,7 +3,7 @@ import sys
 import re
 import threading
 from flask import Flask, jsonify, request, send_from_directory
-from db.database import get_db, DB_PATH
+from db.database import get_db, db_version
 from predictors.goals import predict_goals, goal_tip
 import json
 from predictors.acca import build_accas, grade_leg
@@ -163,15 +163,8 @@ _gw_cache_lock = threading.Lock()
 _gw_build_locks = {}  # one per gameweek, so concurrent requests wait rather than rebuild
 
 
-def _db_version():
-    # The WAL's size, not its mtime: SQLite recreates it on every open and close,
-    # while writes either grow it or get checkpointed into the main file.
-    wal = DB_PATH + '-wal'
-    return os.path.getmtime(DB_PATH), os.path.getsize(wal) if os.path.exists(wal) else 0
-
-
 def _cached_gameweek(gw, strategy):
-    key = (_db_version(), gw, strategy)
+    key = (db_version(), gw, strategy)
     with _gw_cache_lock:
         build_lock = _gw_build_locks.setdefault((gw, strategy), threading.Lock())
     with build_lock:
@@ -312,9 +305,9 @@ def _build_gameweek(gw, strategy):
         score_str = f"{top_score[0]}–{top_score[1]}"
 
         total_exp = cp['results']['total_expected']
-        rec_bet = corner_tip(strategy, total_exp, home_name, away_name)
+        rec_bet = corner_tip(strategy, total_exp, home_name, away_name, cp['results']['over_lines'])
 
-        rec_goal_bet = goal_tip(gp['home_xg'] + gp['away_xg'])
+        rec_goal_bet = goal_tip(gp['home_xg'] + gp['away_xg'], res['over_lines'])
 
         fixture = {
             'match_id': match['id'],

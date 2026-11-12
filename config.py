@@ -26,7 +26,10 @@ SPORTRADAR_HOST = "api.sportradar.com"
 SPORTRADAR_ACCESS_LEVEL = "trial"
 SPORTRADAR_VERSION = "v4"
 
-# Competitions to track
+# Competitions to track. A "league" key opts a competition into the fitted model
+# (models/fitted.py): every competition with the same key is one multi-season
+# history. The key must be a domestic league in ucl/config.py. Competitions
+# without it use the ratio ratings in models/team_ratings.py.
 COMPETITIONS = {
     "world_cup_2026": {
         "api_sports": {"league": 1, "season": 2026},
@@ -41,6 +44,7 @@ COMPETITIONS = {
     },
     "epl_2024": {
         "api_sports": {"league": 39, "season": 2024},
+        "league": "epl",
         "sportradar": {"urn": "sr:competition:17"}, # SportRadar Premier League URN
         "difficulty_weight": 0.95,  # EPL is very competitive
         "prior_competition": "epl_2023",  # seed early-season ratings from last season
@@ -50,6 +54,7 @@ COMPETITIONS = {
     # stats/events. 2023 is within the API-Sports free-tier coverage window.
     "epl_2023": {
         "api_sports": {"league": 39, "season": 2023},
+        "league": "epl",
         "sportradar": {"urn": "sr:competition:17"},
         "difficulty_weight": 0.95,
     },
@@ -58,6 +63,7 @@ COMPETITIONS = {
     # strongest dress-rehearsal set. SR trial exposes 25/26, so no API-Sports needed.
     "epl_2025": {
         "api_sports": {"league": 39, "season": 2025},
+        "league": "epl",
         "sportradar": {"urn": "sr:competition:17"},
         "difficulty_weight": 0.95,
         "prior_competition": "epl_2024",
@@ -66,6 +72,7 @@ COMPETITIONS = {
     # Cross-season prior from epl_2025 seeds early-gameweek ratings.
     "epl_2026": {
         "api_sports": {"league": 39, "season": 2026},
+        "league": "epl",
         "sportradar": {"urn": "sr:competition:17"},
         "difficulty_weight": 0.95,
         "prior_competition": "epl_2025",

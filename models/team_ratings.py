@@ -6,7 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from db.database import get_db
 from config import COMPETITIONS
-from models.xg_model import get_team_proxy_xg
+from models.xg_model import DEFAULT_SHOT_MODEL, get_team_proxy_xg
 
 # Ratings are ratios centered on 1.0 (league average). Clamp keeps small samples sane.
 RATING_KEYS = ("attack_goals", "defense_goals", "attack_corners", "defense_corners")
@@ -203,7 +203,9 @@ def _prior_goal_ratings(cur, prior_competition_id, diff_weight):
     return ratings
 
 
-def _compute_one(cur, team_id, competition_id, avgs, diff_weight, as_of_date=None):
+def _compute_one(
+    cur, team_id, competition_id, avgs, diff_weight, as_of_date=None, *, shot_model=DEFAULT_SHOT_MODEL
+):
     """Compute attack/defense ratings for a single team using only matches
     strictly before as_of_date (when given)."""
     date_clause = "AND m.date < ?" if as_of_date else ""
@@ -272,7 +274,7 @@ def _compute_one(cur, team_id, competition_id, avgs, diff_weight, as_of_date=Non
     total_corners = cur.fetchone()["total_corners"] or 0
     corners_against = total_corners - corners_for
 
-    proxy_xg = get_team_proxy_xg(team_id, competition_id, as_of_date)
+    proxy_xg = get_team_proxy_xg(team_id, competition_id, as_of_date, shot_model=shot_model)
 
     avg_goals = avgs["avg_goals_per_team"]
     avg_corners = avgs["avg_corners_per_team"]
@@ -326,12 +328,15 @@ def _read_cached(cur, team_id, competition_id):
     return dict(row) if row else None
 
 
-def build_context(competition_id, home_team_id, away_team_id, as_of_date=None):
+def build_context(
+    competition_id, home_team_id, away_team_id, as_of_date=None, *, shot_model=DEFAULT_SHOT_MODEL
+):
     """Assemble everything a predictor needs for one matchup.
 
-    When as_of_date is given, ratings + averages are recomputed point-in-time from
-    matches strictly before that date (used by the backtest to avoid look-ahead
-    leakage). Otherwise the pre-computed cached ratings are used (live prediction).
+    When as_of_date is given, ratings and averages use matches dated strictly
+    before it. Pass a shot_model fitted by that cutoff for historical replay,
+    or None for the baseline shot curve. Omitting it uses the standard cached
+    shot model. Without as_of_date, use the precomputed live ratings.
 
     Returns a dict with home_ratings, away_ratings, avgs, and home_advantage/away_advantage.
     """
@@ -345,8 +350,12 @@ def build_context(competition_id, home_team_id, away_team_id, as_of_date=None):
             return None
 
         if as_of_date is not None:
-            home = _compute_one(cur, home_team_id, competition_id, avgs, diff_weight, as_of_date)
-            away = _compute_one(cur, away_team_id, competition_id, avgs, diff_weight, as_of_date)
+            home = _compute_one(
+                cur, home_team_id, competition_id, avgs, diff_weight, as_of_date, shot_model=shot_model
+            )
+            away = _compute_one(
+                cur, away_team_id, competition_id, avgs, diff_weight, as_of_date, shot_model=shot_model
+            )
         else:
             home = _read_cached(cur, home_team_id, competition_id)
             away = _read_cached(cur, away_team_id, competition_id)

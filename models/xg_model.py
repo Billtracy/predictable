@@ -20,6 +20,7 @@ SHOT_EVENT_TYPES = (
     "goal",
     "score_change",
 )
+DEFAULT_SHOT_MODEL = object()
 _XG_MODEL_CACHE = {"loaded": False, "model": None}
 
 
@@ -45,73 +46,67 @@ def calculate_angle(x, y):
         return 0
 
 
-def _normalize_x(x, team_id, match_id, db):
-    """Normalize X coordinate so all shots face toward X=100 (opponent's goal).
-    SportRadar uses absolute pitch coords where each team attacks a different end.
-    We detect the team's attacking direction from the average X of their shots in that match."""
-    cur = db.cursor()
-    cur.execute("""
-        SELECT AVG(x_coord) as avg_x FROM match_events
-        WHERE match_id = ? AND team_id = ?
-        AND event_type IN ('shot_off_target', 'shot_on_target', 'shot_saved', 'shot_blocked', 'score_change')
-    """, (match_id, team_id))
-    row = cur.fetchone()
-    avg_x = row["avg_x"] if row and row["avg_x"] is not None else 50
-    
-    # If average shot X < 50, the team is attacking toward X=0, so flip
-    if avg_x < 50:
-        return 100 - x
-    return x
+def _load_shots(db, as_of_date, *, team_id=None, competition_id=None):
+    """Load coordinate shots with each team's attack oriented toward X=100."""
+    event_types = ", ".join("?" for _ in SHOT_EVENT_TYPES)
+    filters = [f"me.event_type IN ({event_types})"]
+    params = list(SHOT_EVENT_TYPES)
+    join = ""
+    if competition_id is not None or as_of_date is not None:
+        join = "JOIN matches m ON m.id = me.match_id"
+    if team_id is not None:
+        filters.append("me.team_id = ?")
+        params.append(team_id)
+    if competition_id is not None:
+        filters.append("m.competition_id = ?")
+        params.append(competition_id)
+    if as_of_date is not None:
+        filters.extend(("m.status IN ('FT', 'AET', 'PEN')", "m.date < ?"))
+        params.append(as_of_date)
+
+    # Preserve the direction heuristic: average X across the team's attempts in
+    # the match, including those without a Y coordinate and excluding "goal".
+    return db.execute(
+        f"""
+        WITH shots AS (
+            SELECT me.match_id, me.event_type, me.x_coord, me.y_coord,
+                   AVG(CASE WHEN me.event_type != 'goal' THEN me.x_coord END)
+                       OVER (PARTITION BY me.match_id, me.team_id) AS avg_x
+            FROM match_events me
+            {join}
+            WHERE {" AND ".join(filters)}
+        )
+        SELECT match_id, event_type, y_coord,
+               CASE WHEN avg_x < 50 THEN 100 - x_coord ELSE x_coord END AS x_coord
+        FROM shots
+        WHERE x_coord IS NOT NULL AND y_coord IS NOT NULL
+        """,
+        params,
+    ).fetchall()
 
 
-def train_xg_model():
+def _shot_features(x, y):
+    return [calculate_distance(x, y), calculate_angle(x, y)]
+
+
+def train_xg_model(as_of_date=None):
     """
     Train a logistic regression model on historical shot data from the database.
-    Falls back to the baseline curve when there is not enough event data.
+    With a cutoff, use only completed matches dated strictly before it.
+    Return None to select the baseline curve when training data is insufficient.
     """
     try:
         from sklearn.linear_model import LogisticRegression
 
         with get_db() as db:
-            cur = db.cursor()
-            cur.execute(
-                """
-                SELECT me.x_coord, me.y_coord, me.event_type, me.outcome, me.team_id, me.match_id
-                FROM match_events me
-                WHERE me.event_type IN (
-                    'shot_off_target',
-                    'shot_on_target',
-                    'shot_saved',
-                    'shot_blocked',
-                    'goal',
-                    'score_change'
-                )
-                AND me.x_coord IS NOT NULL AND me.y_coord IS NOT NULL
-                """
-            )
-            shots = cur.fetchall()
+            shots = _load_shots(db, as_of_date)
 
-            if len(shots) < 100:
-                print(f"Not enough shots for training ({len(shots)}). Using baseline model.")
-                return None
+        if len(shots) < 100:
+            print(f"Not enough shots for training ({len(shots)}). Using baseline model.")
+            return None
 
-            features = []
-            labels = []
-            for shot in shots:
-                x = shot["x_coord"]
-                y = shot["y_coord"]
-                if x is None or y is None:
-                    continue
-
-                # Normalize X so all shots face toward X=100
-                x = _normalize_x(x, shot["team_id"], shot["match_id"], db)
-
-                dist = calculate_distance(x, y)
-                angle = calculate_angle(x, y)
-                is_goal = 1 if shot["event_type"] in ("goal", "score_change") else 0
-
-                features.append([dist, angle])
-                labels.append(is_goal)
+        features = [_shot_features(shot["x_coord"], shot["y_coord"]) for shot in shots]
+        labels = [int(shot["event_type"] in ("goal", "score_change")) for shot in shots]
 
         if len(set(labels)) < 2:
             print("Shot data has only one outcome class. Using baseline model.")
@@ -141,13 +136,14 @@ B2 = 2.5
 
 def get_xg(x, y, model=None):
     """Get the expected goals value for a shot at coordinates (x, y)."""
-    dist = calculate_distance(x, y)
-    angle = calculate_angle(x, y)
+    features = _shot_features(x, y)
+    if model is not None:
+        return model.predict_proba([features])[0][1]
+    return _baseline_xg(*features)
 
-    if model:
-        return model.predict_proba([[dist, angle]])[0][1]
 
-    exponent = -(B0 + (B1 * dist) + (B2 * angle))
+def _baseline_xg(distance, angle):
+    exponent = -(B0 + (B1 * distance) + (B2 * angle))
     exponent = max(-50, min(50, exponent))
     return 1 / (1 + math.exp(exponent))
 
@@ -162,56 +158,39 @@ def get_cached_xg_model():
 
 def get_team_event_xg(team_id, competition_id, model=None, as_of_date=None):
     """Return average xG per match from mapped SportRadar shot coordinates.
-    When as_of_date is given, only matches strictly before it are counted."""
-    date_clause = "AND m.date < ?" if as_of_date else ""
-    params = [team_id, competition_id] + ([as_of_date] if as_of_date else [])
+    With a cutoff, count only completed matches dated strictly before it."""
     with get_db() as db:
-        cur = db.cursor()
-        cur.execute(
-            f"""
-            SELECT me.match_id, me.x_coord, me.y_coord, me.team_id
-            FROM match_events me
-            JOIN matches m ON me.match_id = m.id
-            WHERE me.team_id = ?
-              AND m.competition_id = ?
-              AND me.event_type IN (
-                    'shot_off_target',
-                    'shot_on_target',
-                    'shot_saved',
-                    'shot_blocked',
-                    'goal',
-                    'score_change'
-              )
-              {date_clause}
-            """,
-            params,
-        )
-        shots = cur.fetchall()
+        shots = _load_shots(db, as_of_date, team_id=team_id, competition_id=competition_id)
 
-        covered_matches = len({shot["match_id"] for shot in shots})
-        if not shots or covered_matches == 0:
-            return None
-
-        total_xg = 0
-        for shot in shots:
-            x = _normalize_x(shot["x_coord"], shot["team_id"], shot["match_id"], db)
-            total_xg += get_xg(x, shot["y_coord"], model)
-        return total_xg / covered_matches
+    if not shots:
+        return None
+    covered_matches = len({shot["match_id"] for shot in shots})
+    features = [_shot_features(shot["x_coord"], shot["y_coord"]) for shot in shots]
+    if model is None:
+        total_xg = sum(_baseline_xg(*feature) for feature in features)
+    else:
+        total_xg = sum(row[1] for row in model.predict_proba(features))
+    return total_xg / covered_matches
 
 
-def get_team_proxy_xg(team_id, competition_id, as_of_date=None):
+def get_team_proxy_xg(team_id, competition_id, as_of_date=None, *, shot_model=DEFAULT_SHOT_MODEL):
     """
     Prefer event-coordinate xG when available; otherwise estimate from
-    API-Sports aggregate shots-on-target data. When as_of_date is given, only
-    matches strictly before it contribute (point-in-time, leak-free).
+    API-Sports aggregate shots-on-target data. With a cutoff, count only
+    completed matches dated strictly before it. Historical replays should pass
+    a model fitted before the cutoff, or None for the baseline curve.
     """
-    model = get_cached_xg_model()
-    event_xg = get_team_event_xg(team_id, competition_id, model, as_of_date)
+    if shot_model is DEFAULT_SHOT_MODEL:
+        shot_model = get_cached_xg_model()
+    event_xg = get_team_event_xg(team_id, competition_id, shot_model, as_of_date)
     if event_xg is not None:
         return event_xg
 
-    date_clause = "AND m.date < ?" if as_of_date else ""
-    params = [team_id, competition_id] + ([as_of_date] if as_of_date else [])
+    date_clause = ""
+    params = [team_id, competition_id]
+    if as_of_date is not None:
+        date_clause = "AND m.status IN ('FT', 'AET', 'PEN') AND m.date < ?"
+        params.append(as_of_date)
     with get_db() as db:
         cur = db.cursor()
         cur.execute(

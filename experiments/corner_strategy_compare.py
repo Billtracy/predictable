@@ -88,31 +88,34 @@ def load_fixtures():
                 "goals": {
                     "home_xg": round(gp["home_xg"], 2),
                     "away_xg": round(gp["away_xg"], 2),
+                    "over_lines": res["over_lines"],
                     "btts_prob": res.get("btts_prob", 0),
                     "o15_prob": res.get("over_lines", {}).get(1.5, 0),
                     "o25_prob": res.get("over_lines", {}).get(2.5, 0),
                     "outcome_probs": [res["home_win_prob"] / outcome_total, res["draw_prob"] / outcome_total, res["away_win_prob"] / outcome_total],
                 },
-                "corners": {"total_expected": round(cp["results"]["total_expected"], 1)},
+                "corners": {"total_expected": round(cp["results"]["total_expected"], 1), "over_lines": cp["results"]["over_lines"]},
                 "actual": {"home_score": match["home_score"], "away_score": match["away_score"], "corners": actual_corners},
             })
     return fixtures
 
 
+def fixture_corner_tip(f, strategy):
+    """The corner tip the API shows for a fixture under a strategy."""
+    return corner_tip(strategy, f["corners"]["total_expected"], f["home_team"], f["away_team"], f["corners"]["over_lines"])
+
+
+def fixture_goal_tip(f):
+    """The goals tip the API shows for a fixture."""
+    return goal_tip(f["goals"]["home_xg"] + f["goals"]["away_xg"], f["goals"]["over_lines"])
+
+
 def evaluate_tips(fixtures, strategy):
-    return evaluate_lines(
-        fixtures,
-        lambda f: corner_tip(strategy, f["corners"]["total_expected"], f["home_team"], f["away_team"]),
-        lambda f: f["actual"]["corners"],
-    )
+    return evaluate_lines(fixtures, lambda f: fixture_corner_tip(f, strategy), lambda f: f["actual"]["corners"])
 
 
 def evaluate_goal_tips(fixtures):
-    return evaluate_lines(
-        fixtures,
-        lambda f: goal_tip(f["goals"]["home_xg"] + f["goals"]["away_xg"]),
-        lambda f: f["actual"]["home_score"] + f["actual"]["away_score"],
-    )
+    return evaluate_lines(fixtures, fixture_goal_tip, lambda f: f["actual"]["home_score"] + f["actual"]["away_score"])
 
 
 def evaluate_lines(fixtures, tip_for, actual_for):
@@ -200,8 +203,8 @@ def gameweek_breakdown(fixtures):
         by_gw[f["gw"]].append(f)
     rows = []
     for gw, gw_fixtures in sorted(by_gw.items()):
-        goal = [bet_won(goal_tip(f["goals"]["home_xg"] + f["goals"]["away_xg"]), f["actual"]["home_score"] + f["actual"]["away_score"]) for f in gw_fixtures]
-        corner = [bet_won(corner_tip(DEFAULT_CORNER_STRATEGY, f["corners"]["total_expected"], f["home_team"], f["away_team"]), f["actual"]["corners"]) for f in gw_fixtures]
+        goal = [bet_won(fixture_goal_tip(f), f["actual"]["home_score"] + f["actual"]["away_score"]) for f in gw_fixtures]
+        corner = [bet_won(fixture_corner_tip(f, DEFAULT_CORNER_STRATEGY), f["actual"]["corners"]) for f in gw_fixtures]
         fixtures_by_id = {f["match_id"]: f for f in gw_fixtures}
         accas = [all(grade_leg(leg, fixtures_by_id) for leg in legs) if len(legs) == 3 else None for legs in build_accas(gw_fixtures)]
         rows.append({

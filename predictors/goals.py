@@ -5,8 +5,24 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from db.database import get_db
+from models import fitted
 from models.team_ratings import build_context
 from models.poisson import simulate_match
+from predictors.tips import has_lines, most_likely_tip
+
+# Lines the goals tip chooses between when it has line probabilities. Only the
+# widest line on each side is listed: Over 1.5 is always likelier than Over 2.5,
+# so a narrower line could never be the most likely one.
+GOAL_TIP_LINES = ("Over 1.5", "Under 3.5")
+
+
+def matchup_goal_rates(context):
+    home, away = context["home_ratings"], context["away_ratings"]
+    average = context["avgs"]["avg_goals_per_team"]
+    return (
+        home["attack_goals"] * away["defense_goals"] * average * context["home_advantage"],
+        away["attack_goals"] * home["defense_goals"] * average * context["away_advantage"],
+    )
 
 
 def predict_goals(home_team_name, away_team_name, competition_id, as_of_date=None, verbose=True):
@@ -14,6 +30,8 @@ def predict_goals(home_team_name, away_team_name, competition_id, as_of_date=Non
 
     When as_of_date is provided, team ratings and league averages are recomputed
     using only matches played strictly before that date (leak-free backtesting).
+    Competitions with a "league" in config use the fitted model (models/fitted.py);
+    the rest use the ratio ratings and the Monte Carlo simulation.
     """
     with get_db() as db:
         cur = db.cursor()
@@ -29,6 +47,16 @@ def predict_goals(home_team_name, away_team_name, competition_id, as_of_date=Non
             print(f"Error: Could not find one or both teams ('{home_team_name}', '{away_team_name}').")
             return None
 
+    if fitted.league_of(competition_id):
+        pred = fitted.predict_goals(competition_id, home_team["id"], away_team["id"], as_of_date)
+        if pred is None:
+            if verbose:
+                print(f"Error: Too little match history for {competition_id}")
+            return None
+        if verbose:
+            print(f"Calculated Matchup xG -> {home_team['name']}: {pred['home_xg']:.2f} | {away_team['name']}: {pred['away_xg']:.2f}")
+        return {"home_team": home_team["name"], "away_team": away_team["name"], **pred}
+
     # Build point-in-time (or cached) context: ratings, averages, home advantage
     ctx = build_context(competition_id, home_team["id"], away_team["id"], as_of_date)
     if ctx is None:
@@ -41,14 +69,7 @@ def predict_goals(home_team_name, away_team_name, competition_id, as_of_date=Non
         print("Error: Ratings not found. Run team_ratings.py first (or pass as_of_date).")
         return None
 
-    global_avg_goals = ctx["avgs"]["avg_goals_per_team"]
-
-    # Home advantage is fit from the data (neutral-venue tournaments collapse to ~1.0).
-    home_advantage = ctx["home_advantage"]
-    away_disadvantage = ctx["away_advantage"]
-
-    home_xg = home_ratings["attack_goals"] * away_ratings["defense_goals"] * global_avg_goals * home_advantage
-    away_xg = away_ratings["attack_goals"] * home_ratings["defense_goals"] * global_avg_goals * away_disadvantage
+    home_xg, away_xg = matchup_goal_rates(ctx)
 
     if verbose:
         print(f"Calculated Matchup xG -> {home_team['name']}: {home_xg:.2f} | {away_team['name']}: {away_xg:.2f}")
@@ -67,8 +88,13 @@ def predict_goals(home_team_name, away_team_name, competition_id, as_of_date=Non
     }
 
 
-def goal_tip(total_xg):
-    """The goals line we tip for a fixture, from its total expected goals."""
+def goal_tip(total_xg, over_lines=None):
+    """The goals line we tip for a fixture. Given the fixture's over-line
+    probabilities (pass them for fitted-model competitions, whose probabilities
+    are calibrated), tip the line most likely to land. Without them, fall back to
+    fixed bands on total expected goals."""
+    if has_lines(GOAL_TIP_LINES, over_lines):
+        return most_likely_tip(GOAL_TIP_LINES, over_lines)
     if total_xg > 3.0:
         return "Over 2.5"
     if total_xg > 2.5:

@@ -5,8 +5,19 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from db.database import get_db
+from models import fitted
 from models.team_ratings import build_context
 from models.poisson import simulate_match
+from predictors.tips import has_lines, most_likely_tip
+
+
+def matchup_corner_rates(context):
+    home, away = context["home_ratings"], context["away_ratings"]
+    average = context["avgs"]["avg_corners_per_team"]
+    return (
+        home["attack_corners"] * away["defense_corners"] * average,
+        away["attack_corners"] * home["defense_corners"] * average,
+    )
 
 
 def predict_corners(home_team_name, away_team_name, competition_id, as_of_date=None, verbose=True):
@@ -14,6 +25,8 @@ def predict_corners(home_team_name, away_team_name, competition_id, as_of_date=N
 
     When as_of_date is provided, ratings and league averages are recomputed using
     only matches played strictly before that date (leak-free backtesting).
+    Competitions with a "league" in config use the fitted model (models/fitted.py);
+    the rest use the ratio ratings and the Monte Carlo simulation.
     """
     with get_db() as db:
         cur = db.cursor()
@@ -28,6 +41,16 @@ def predict_corners(home_team_name, away_team_name, competition_id, as_of_date=N
         if not home_team or not away_team:
             print(f"Error: Could not find one or both teams ('{home_team_name}', '{away_team_name}').")
             return None
+
+    if fitted.league_of(competition_id):
+        pred = fitted.predict_corners(competition_id, home_team["id"], away_team["id"], as_of_date)
+        if pred is None:
+            if verbose:
+                print(f"Error: Too little corner history for {competition_id}")
+            return None
+        if verbose:
+            print(f"Calculated Expected Corners -> {home_team['name']}: {pred['home_expected']:.2f} | {away_team['name']}: {pred['away_expected']:.2f}")
+        return {"home_team": home_team["name"], "away_team": away_team["name"], **pred}
 
     ctx = build_context(competition_id, home_team["id"], away_team["id"], as_of_date)
     if ctx is None:
@@ -45,9 +68,7 @@ def predict_corners(home_team_name, away_team_name, competition_id, as_of_date=N
         print(f"Error: No corner data for {competition_id}")
         return None
 
-    # Calculate Expected Corners
-    home_expected = home_ratings["attack_corners"] * away_ratings["defense_corners"] * global_avg_corners
-    away_expected = away_ratings["attack_corners"] * home_ratings["defense_corners"] * global_avg_corners
+    home_expected, away_expected = matchup_corner_rates(ctx)
 
     if verbose:
         print(f"Calculated Expected Corners -> {home_team['name']}: {home_expected:.2f} | {away_team['name']}: {away_expected:.2f}")
@@ -94,8 +115,21 @@ def recommend_corner_bet_classic(total_expected, home_team_name, away_team_name)
     return "Over 8.5"
 
 
-# Selectable corner tip rules, keyed by the name the API/UI uses
+# Lines the 'likeliest' strategy chooses between. Only the widest line on each
+# side is listed: Over 7.5 is always likelier than Over 8.5, and Under 12.5 than
+# Under 11.5, so a narrower line could never be the most likely one.
+CORNER_TIP_LINES = ("Over 7.5", "Under 12.5")
+
+# Selectable corner tip rules, keyed by the name the API/UI uses. A strategy with
+# 'lines' tips whichever of them the model rates most likely, when the caller
+# passes the fixture's line probabilities; 'fn' is its rule when it has none.
 CORNER_STRATEGIES = {
+    'likeliest': {
+        'label': 'Most likely line',
+        'description': 'Over 7.5 or Under 12.5, whichever the model rates more likely to land',
+        'lines': CORNER_TIP_LINES,
+        'fn': recommend_corner_bet,
+    },
     'tight': {
         'label': 'Tight bands',
         'description': 'U11.5 ≤ 8.3 · U12.5 8.4–9.0 · O7.5 9.1–10.3 · O8.5 ≥ 10.4',
@@ -107,10 +141,16 @@ CORNER_STRATEGIES = {
         'fn': recommend_corner_bet_classic,
     },
 }
-DEFAULT_CORNER_STRATEGY = 'tight'
+DEFAULT_CORNER_STRATEGY = 'likeliest'
 
 
-def corner_tip(strategy, total_expected, home_team_name, away_team_name):
-    """Corner tip under a named strategy, falling back to the default for unknown names."""
+def corner_tip(strategy, total_expected, home_team_name, away_team_name, over_lines=None):
+    """Corner tip under a named strategy, falling back to the default for unknown names.
+
+    over_lines is the fixture's {line: P(over) in percent}. Pass it for
+    fitted-model competitions, whose probabilities are calibrated.
+    """
     entry = CORNER_STRATEGIES.get(strategy) or CORNER_STRATEGIES[DEFAULT_CORNER_STRATEGY]
+    if has_lines(entry.get('lines', ()), over_lines):
+        return most_likely_tip(entry['lines'], over_lines)
     return entry['fn'](total_expected, home_team_name, away_team_name)
