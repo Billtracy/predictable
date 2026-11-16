@@ -8,6 +8,8 @@ from predictors.goals import predict_goals, goal_tip
 import json
 from predictors.acca import build_accas, build_golden, grade_leg
 from predictors.corners import predict_corners, corner_tip, CORNER_STRATEGIES, DEFAULT_CORNER_STRATEGY
+from predictors.ht_corners import ht_corner_tip, tip_probability_at_ht
+from predictors import ht_live
 
 app = Flask(__name__, static_folder='static')
 
@@ -248,7 +250,8 @@ _gw_build_locks = {}  # one per gameweek, so concurrent requests wait rather tha
 
 
 def _cached_gameweek(gw, strategy):
-    key = (db_version(), gw, strategy)
+    # Live HT tips land in their own store mid-match, without a database change.
+    key = ((db_version(), ht_live.store_version()), gw, strategy)
     with _gw_cache_lock:
         build_lock = _gw_build_locks.setdefault((gw, strategy), threading.Lock())
     with build_lock:
@@ -278,7 +281,52 @@ def _gameweek_record(fixtures):
                 counts['won'] += won
                 counts['graded'] += 1
         record[market] = r
+    # Half-time corner tips count only when frozen live at the break, never the
+    # backtest replays shown on matches played before the capture existed.
+    r = {'won': 0, 'graded': 0, 'tips': {}}
+    for f in fixtures:
+        ht = f['corners'].get('ht') or {}
+        if ht.get('source') != 'live' or ht.get('bet_won') is None:
+            continue
+        tip = r['tips'].setdefault(ht['recommended_bet'], {'won': 0, 'graded': 0})
+        for counts in (r, tip):
+            counts['won'] += ht['bet_won']
+            counts['graded'] += 1
+    record['corners_ht'] = r
     return record
+
+
+def _first_half_corners(match_ids):
+    """{match_id: first-half corners} from stored Sportradar corner events."""
+    if not match_ids:
+        return {}
+    with get_db() as db:
+        placeholders = ','.join('?' for _ in match_ids)
+        rows = db.execute(f'''
+            SELECT match_id, raw_data FROM match_events
+            WHERE event_type = 'corner_kick' AND match_id IN ({placeholders})
+        ''', list(match_ids)).fetchall()
+    counts = {}
+    for row in rows:
+        counts.setdefault(row['match_id'], 0)
+        if json.loads(row['raw_data']).get('period') == 1:
+            counts[row['match_id']] += 1
+    return counts
+
+
+def _ht_corners(match, pre_tip, live_tips, first_half):
+    """The HT corner tip for a fixture: frozen live at the break ('live'), else
+    replayed from stored events for a finished match ('backtest'), else None."""
+    live = live_tips.get(str(match['id']))
+    if live:
+        ht = {k: live[k] for k in ('ht_corners', 'recommended_bet', 'prob', 'expected_total')}
+        ht['source'] = 'live'
+    elif match['status'] in FINISHED and match['id'] in first_half:
+        ht = {**ht_corner_tip(first_half[match['id']]), 'source': 'backtest'}
+    else:
+        return None
+    ht['pre_tip_prob'] = round(100 * tip_probability_at_ht(pre_tip, ht['ht_corners']), 1)
+    return ht
 
 
 def _add_record(total, record):
@@ -291,6 +339,29 @@ def _add_record(total, record):
             tt = t['tips'].setdefault(label, {'won': 0, 'graded': 0})
             tt['won'] += tip['won']
             tt['graded'] += tip['graded']
+
+
+_TIP_RE = re.compile(r'^(Over|Under) \d{1,2}\.5$')
+
+
+@app.route('/api/epl/live-tip/<int:match_id>')
+def epl_live_tip(match_id):
+    """The 'Get live tip' button: half-time corner tip for an in-play EPL match."""
+    with get_db() as db:
+        match = db.execute(
+            'SELECT id, date, sportradar_id FROM matches WHERE id = ? AND competition_id = ?',
+            (match_id, EPL_COMPETITION)).fetchone()
+    if not match:
+        return jsonify({'success': False, 'error': 'Unknown match'}), 404
+    pre_tip = request.args.get('pre_tip', '')
+    pre_tip = pre_tip if _TIP_RE.match(pre_tip) else None
+    try:
+        payload = ht_live.live_tip(dict(match), pre_tip)
+    except Exception as e:
+        print(f"Live tip error {match_id}: {e}")
+        return jsonify({'success': False, 'error': 'Live tip failed'}), 500
+    payload.pop('params', None)
+    return jsonify({'success': True, 'match_id': match_id, **payload})
 
 
 @app.route('/api/epl/gameweek/<int:gw>')
@@ -362,6 +433,8 @@ def _build_gameweek(gw, strategy):
     if not matches:
         return None
 
+    live_tips = ht_live.load_live_tips()
+    first_half = _first_half_corners(finished_ids)
     fixtures = []
     golden_candidates = []
     for match in matches:
@@ -379,6 +452,10 @@ def _build_gameweek(gw, strategy):
         if not predicted:
             continue
         goals, corners = predicted
+        corners = dict(corners)
+        ht = _ht_corners(match, corners['recommended_bet'], live_tips, first_half)
+        if ht:
+            corners['ht'] = ht
         fixture = {
             'match_id': match['id'],
             'date': match['date'],
@@ -402,6 +479,8 @@ def _build_gameweek(gw, strategy):
             }
             goals['bet_won'] = _bet_won(goals['recommended_bet'], total_goals)
             corners['bet_won'] = _bet_won(corners['recommended_bet'], actual_corners)
+            if ht:
+                ht['bet_won'] = _bet_won(ht['recommended_bet'], actual_corners)
 
         fixtures.append(fixture)
 

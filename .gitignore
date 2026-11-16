@@ -13,3 +13,6 @@ world_cup_stats_cache.json
 
 # Scratch / working docs
 implementation_plan.md.resolved
+
+# Live HT corner tips frozen on the server (mounted volume)
+runtime/

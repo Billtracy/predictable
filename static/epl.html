@@ -127,6 +127,20 @@
             .side { gap: 7px; }
             .tname { font-size: 13px; }
         }
+        /* Live half-time tip */
+        .live-wrap { display: flex; justify-content: center; margin-top: 8px; }
+        .live-btn {
+            font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 999px;
+            background: var(--ink); color: var(--surface); cursor: pointer; border: 0;
+        }
+        .live-btn:disabled { opacity: .6; cursor: default; }
+        .live-tip {
+            margin: 8px auto 0; max-width: 360px; padding: 10px 12px; border-radius: 12px;
+            background: var(--surface-2); color: var(--ink-2); font-size: 12.5px; text-align: center; line-height: 1.45;
+        }
+        .live-tip b { color: var(--ink); }
+        .live-tip .big { display: block; font-size: 16px; font-weight: 800; color: var(--ink); margin: 2px 0; }
+        .live-tip small { display: block; color: var(--ink-3); margin-top: 4px; }
     </style>
 
     <!-- Google tag (gtag.js) -->
@@ -466,6 +480,44 @@ function chip(label, bet, won) {
     return `<span class="chip${cls}">${label} <b>${esc(bet)}${mark}</b></span>`;
 }
 
+// === Live half-time tip ===
+// In play by the clock (kickoff .. +150 min): the stored status isn't updated live.
+function inPlay(iso) {
+    const ko = new Date(iso).getTime(), now = Date.now();
+    return now >= ko && now <= ko + 150 * 60 * 1000;
+}
+
+async function liveTip(ev, matchId, preTip) {
+    ev.preventDefault();   // the button sits in the card's <summary>; don't toggle it
+    ev.stopPropagation();
+    const btn = ev.currentTarget, box = $('live-' + matchId);
+    btn.disabled = true;
+    btn.textContent = 'Checking…';
+    box.hidden = false;
+    box.innerHTML = 'Reading the live match…';
+    try {
+        const q = preTip ? `?pre_tip=${encodeURIComponent(preTip)}` : '';
+        const d = await (await fetch(`/api/epl/live-tip/${matchId}${q}`)).json();
+        if (!d.success) throw new Error(d.error || 'failed');
+        if (d.state === 'tip') {
+            const pre = d.pre_tip ? `<small>Pre-match ${esc(d.pre_tip)} now <b>${d.pre_tip_prob}%</b></small>` : '';
+            const score = d.ht_score && d.ht_score[0] !== null ? ` · HT ${d.ht_score[0]}-${d.ht_score[1]}` : '';
+            box.innerHTML = `Half-time: <b>${d.ht_corners} corners</b>${esc(score)}
+                <span class="big">${esc(d.recommended_bet)} corners</span>
+                ${d.prob}% likely · about ${d.expected_total} expected at full time
+                ${pre}<small>Full-time total. Hit rate, not value: check the price.</small>`;
+        } else {
+            const corners = d.first_half_corners !== null && d.first_half_corners !== undefined
+                ? ` ${d.first_half_corners} corners so far.` : '';
+            box.innerHTML = `${esc(d.message)}${esc(corners)}`;
+        }
+    } catch (e) {
+        box.innerHTML = 'Could not get a live tip. Try again in a minute.';
+    }
+    btn.disabled = false;
+    btn.textContent = 'Refresh live tip';
+}
+
 function renderFixtures(fixtures) {
     let html = '', lastDay = null;
     fixtures.forEach(f => {
@@ -514,7 +566,12 @@ function fixtureHTML(f) {
             <div class="chips">
                 ${chip('Goals', g.recommended_bet, g.bet_won)}
                 ${chip('Corners', c.recommended_bet, c.bet_won)}
+                ${c.ht ? chip(c.ht.source === 'live' ? `HT ${c.ht.ht_corners}c` : `HT ${c.ht.ht_corners}c replay`, c.ht.recommended_bet, c.ht.bet_won) : ''}
             </div>
+            ${!a && inPlay(f.date) ? `
+            <div class="live-wrap"><button class="live-btn" type="button"
+                onclick="liveTip(event, ${Number(f.match_id)}, '${esc(c.recommended_bet || '')}')">Get live tip</button></div>
+            <div class="live-tip" id="live-${Number(f.match_id)}" hidden></div>` : ''}
         </summary>
         <div class="detail">
             <div class="probs-labels">

@@ -5,6 +5,10 @@ services:
     container_name: predictable_app
     restart: unless-stopped
     env_file: .env
+    # Live HT tips (predictors/ht_live.py) are frozen in runtime/ and must outlive
+    # redeploys; runtime/ is excluded from rsync and the image via .dockerignore.
+    volumes:
+      - ./runtime:/app/runtime
     mem_limit: 1g
     networks: [proxy]
     healthcheck:

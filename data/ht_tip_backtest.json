@@ -1,0 +1,136 @@
+{
+  "matches": 760,
+  "overall": {
+    "pre_match": {
+      "won": 600,
+      "graded": 760,
+      "hit_rate": 78.9
+    },
+    "half_time": {
+      "won": 673,
+      "graded": 760,
+      "hit_rate": 88.6
+    },
+    "pre_match_mean_p": 82.9,
+    "half_time_mean_p": 88.5
+  },
+  "by_season": {
+    "epl_2024": {
+      "pre_match": {
+        "won": 213,
+        "graded": 280,
+        "hit_rate": 76.1
+      },
+      "half_time": {
+        "won": 248,
+        "graded": 280,
+        "hit_rate": 88.6
+      }
+    },
+    "epl_2025": {
+      "pre_match": {
+        "won": 307,
+        "graded": 380,
+        "hit_rate": 80.8
+      },
+      "half_time": {
+        "won": 340,
+        "graded": 380,
+        "hit_rate": 89.5
+      }
+    },
+    "epl_2026": {
+      "pre_match": {
+        "won": 80,
+        "graded": 100,
+        "hit_rate": 80.0
+      },
+      "half_time": {
+        "won": 85,
+        "graded": 100,
+        "hit_rate": 85.0
+      }
+    }
+  },
+  "ht_tip_lines": {
+    "HT+2.5 (Over)": {
+      "won": 412,
+      "graded": 466,
+      "hit_rate": 88.4
+    },
+    "HT+7.5 (Under)": {
+      "won": 0,
+      "graded": 1,
+      "hit_rate": 0.0
+    },
+    "HT+8.5 (Under)": {
+      "won": 261,
+      "graded": 293,
+      "hit_rate": 89.1
+    }
+  },
+  "calibration": {
+    "pre_match": {
+      "75-80%": {
+        "n": 201,
+        "predicted": 78.7,
+        "actual": 78.1
+      },
+      "80-85%": {
+        "n": 352,
+        "predicted": 82.3,
+        "actual": 78.1
+      },
+      "85-90%": {
+        "n": 164,
+        "predicted": 87.0,
+        "actual": 81.1
+      },
+      "90-95%": {
+        "n": 39,
+        "predicted": 91.9,
+        "actual": 82.1
+      },
+      "95-100%": {
+        "n": 4,
+        "predicted": 96.0,
+        "actual": 75.0
+      }
+    },
+    "half_time": {
+      "75-80%": {
+        "n": 1,
+        "predicted": 79.7,
+        "actual": 0.0
+      },
+      "80-85%": {
+        "n": 8,
+        "predicted": 84.6,
+        "actual": 87.5
+      },
+      "85-90%": {
+        "n": 638,
+        "predicted": 88.2,
+        "actual": 89.2
+      },
+      "90-95%": {
+        "n": 113,
+        "predicted": 90.2,
+        "actual": 85.8
+      }
+    }
+  },
+  "pre_tip_rechecked_at_ht": {
+    "already_settled_at_ht": 29,
+    "alive_p_ge_85": {
+      "won": 350,
+      "graded": 368,
+      "hit_rate": 95.1
+    },
+    "alive_p_lt_60": {
+      "won": 42,
+      "graded": 123,
+      "hit_rate": 34.1
+    }
+  }
+}
